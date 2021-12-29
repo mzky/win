@@ -897,6 +897,19 @@ type RECT struct {
 	Left, Top, Right, Bottom int32
 }
 
+func (r *RECT) Width() int32 {
+	return r.Right - r.Left
+}
+func (r *RECT) Height() int32 {
+	return r.Bottom - r.Top
+}
+func (r *RECT) Offset(x, y int32) {
+	r.Left += x
+	r.Right += x
+	r.Top += y
+	r.Bottom += y
+}
+
 type SIZE struct {
 	CX, CY int32
 }
@@ -1063,6 +1076,7 @@ var (
 	createIC                *windows.LazyProc
 	createPatternBrush      *windows.LazyProc
 	createRectRgn           *windows.LazyProc
+	createRoundRectRgn      *windows.LazyProc
 	deleteDC                *windows.LazyProc
 	deleteEnhMetaFile       *windows.LazyProc
 	deleteObject            *windows.LazyProc
@@ -1139,6 +1153,7 @@ func init() {
 	createDC = libgdi32.NewProc("CreateDCW")
 	createDIBSection = libgdi32.NewProc("CreateDIBSection")
 	createEnhMetaFile = libgdi32.NewProc("CreateEnhMetaFileW")
+	createRoundRectRgn = libgdi32.NewProc("CreateRoundRectRgn")
 	createFontIndirect = libgdi32.NewProc("CreateFontIndirectW")
 	createIC = libgdi32.NewProc("CreateICW")
 	createPatternBrush = libgdi32.NewProc("CreatePatternBrush")
@@ -1415,6 +1430,17 @@ func CreateRectRgn(nLeftRect, nTopRect, nRightRect, nBottomRect int32) HRGN {
 		uintptr(nBottomRect),
 		0,
 		0)
+
+	return HRGN(ret)
+}
+func CreateRoundRectRgn(x1, y1, x2, y2, w, h int32) HRGN {
+	ret, _, _ := syscall.Syscall6(createRoundRectRgn.Addr(), 6,
+		uintptr(x1),
+		uintptr(y1),
+		uintptr(x2),
+		uintptr(y2),
+		uintptr(w),
+		uintptr(h))
 
 	return HRGN(ret)
 }

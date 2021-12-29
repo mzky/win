@@ -645,9 +645,9 @@ const (
 	WS_TILED            = 0X00000000
 	WS_ICONIC           = 0X20000000
 	WS_SIZEBOX          = 0X00040000
-	WS_OVERLAPPEDWINDOW = 0X00000000 | 0X00C00000 | 0X00080000 | 0X00040000 | 0X00020000 | 0X00010000
-	WS_POPUPWINDOW      = 0X80000000 | 0X00800000 | 0X00080000
-	WS_CHILDWINDOW      = 0X40000000
+	WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+	WS_POPUPWINDOW      = WS_POPUP | WS_BORDER | WS_SYSMENU
+	WS_CHILDWINDOW      = WS_CHILD
 )
 
 // Extended window style constants
@@ -749,6 +749,7 @@ const (
 	WM_ICONERASEBKGND         = 39
 	WM_INITDIALOG             = 272
 	WM_INITMENU               = 278
+	WM_IME_STARTCOMPOSITION   = 269
 	WM_INITMENUPOPUP          = 279
 	WM_INPUT                  = 0X00FF
 	WM_INPUTLANGCHANGE        = 81
@@ -1102,6 +1103,7 @@ const (
 // SystemParametersInfo actions
 const (
 	SPI_GETNONCLIENTMETRICS = 0x0029
+	SPI_GETWORKAREA         = 0x0030
 	SPI_GETHIGHCONTRAST     = 0x0042
 )
 
@@ -1887,7 +1889,9 @@ var (
 	setWindowLongPtr            *windows.LazyProc
 	setWindowPlacement          *windows.LazyProc
 	setWindowPos                *windows.LazyProc
+	setWindowRgn                *windows.LazyProc
 	showWindow                  *windows.LazyProc
+	setWindowText               *windows.LazyProc
 	systemParametersInfo        *windows.LazyProc
 	trackMouseEvent             *windows.LazyProc
 	trackPopupMenu              *windows.LazyProc
@@ -1897,6 +1901,7 @@ var (
 	updateWindow                *windows.LazyProc
 	windowFromDC                *windows.LazyProc
 	windowFromPoint             *windows.LazyProc
+	intersectRect               *windows.LazyProc
 )
 
 func init() {
@@ -1941,6 +1946,7 @@ func init() {
 	endDeferWindowPos = libuser32.NewProc("EndDeferWindowPos")
 	endDialog = libuser32.NewProc("EndDialog")
 	endPaint = libuser32.NewProc("EndPaint")
+	intersectRect = libuser32.NewProc("IntersectRect")
 	enumChildWindows = libuser32.NewProc("EnumChildWindows")
 	findWindow = libuser32.NewProc("FindWindowW")
 	getActiveWindow = libuser32.NewProc("GetActiveWindow")
@@ -2047,6 +2053,7 @@ func init() {
 	}
 	setWindowPlacement = libuser32.NewProc("SetWindowPlacement")
 	setWindowPos = libuser32.NewProc("SetWindowPos")
+	setWindowRgn = libuser32.NewProc("SetWindowRgn")
 	showWindow = libuser32.NewProc("ShowWindow")
 	systemParametersInfo = libuser32.NewProc("SystemParametersInfoW")
 	trackMouseEvent = libuser32.NewProc("TrackMouseEvent")
@@ -2057,6 +2064,7 @@ func init() {
 	updateWindow = libuser32.NewProc("UpdateWindow")
 	windowFromDC = libuser32.NewProc("WindowFromDC")
 	windowFromPoint = libuser32.NewProc("WindowFromPoint")
+	setWindowText = libuser32.NewProc("SetWindowTextW")
 }
 
 func AddClipboardFormatListener(hwnd HWND) bool {
@@ -3175,7 +3183,6 @@ func SendMessage(hWnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 		lParam,
 		0,
 		0)
-
 	return ret
 }
 
@@ -3385,6 +3392,15 @@ func SetWindowPlacement(hWnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
 	return ret != 0
 }
 
+func SetWindowRgn(hWnd HWND, hRgn HRGN, redraw bool) bool {
+	ret, _, _ := syscall.Syscall(setWindowRgn.Addr(), 3,
+		uintptr(hWnd),
+		uintptr(hRgn),
+		uintptr(BoolToBOOL(redraw)))
+
+	return ret != 0
+}
+
 func SetWindowPos(hWnd, hWndInsertAfter HWND, x, y, width, height int32, flags uint32) bool {
 	ret, _, _ := syscall.Syscall9(setWindowPos.Addr(), 7,
 		uintptr(hWnd),
@@ -3496,4 +3512,24 @@ func WindowFromPoint(Point POINT) HWND {
 		0)
 
 	return HWND(ret)
+}
+func IntersectRect(rcDst, src1, src2 *RECT) int32 {
+	ret, _, _ := syscall.Syscall(intersectRect.Addr(), 3,
+		uintptr(unsafe.Pointer(rcDst)),
+		uintptr(unsafe.Pointer(src1)),
+		uintptr(unsafe.Pointer(src2)))
+
+	return int32(ret)
+}
+func SetWindowText(hWnd HWND, text string) bool {
+	lp, err := syscall.UTF16PtrFromString(text)
+	if err != nil {
+		return false
+	}
+	ret, _, _ := syscall.Syscall(setWindowText.Addr(), 2,
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(lp)),
+		0)
+
+	return ret != 0
 }

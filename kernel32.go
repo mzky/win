@@ -86,6 +86,7 @@ var (
 	lockResource                       *windows.LazyProc
 	setLastError                       *windows.LazyProc
 	sizeofResource                     *windows.LazyProc
+	setUnhandledExceptionFilter        *windows.LazyProc
 	systemTimeToFileTime               *windows.LazyProc
 )
 
@@ -173,6 +174,7 @@ func init() {
 	setLastError = libkernel32.NewProc("SetLastError")
 	sizeofResource = libkernel32.NewProc("SizeofResource")
 	systemTimeToFileTime = libkernel32.NewProc("SystemTimeToFileTime")
+	setUnhandledExceptionFilter = libkernel32.NewProc("SetUnhandledExceptionFilter")
 }
 
 func ActivateActCtx(ctx HANDLE) (uintptr, bool) {
@@ -448,4 +450,13 @@ func SystemTimeToFileTime(lpSystemTime *SYSTEMTIME, lpFileTime *FILETIME) bool {
 		0)
 
 	return ret != 0
+}
+
+type OnUnhandledException func(param uintptr) uintptr
+
+func SetUnhandledExceptionFilter(callback OnUnhandledException) {
+	syscall.Syscall(setUnhandledExceptionFilter.Addr(), 1,
+		syscall.NewCallbackCDecl(callback),
+		0,
+		0)
 }
