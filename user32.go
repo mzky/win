@@ -890,7 +890,14 @@ const (
 	WM_CLIPBOARDUPDATE        = 0x031D
 	WM_UNICHAR                = 0x0109
 )
-
+const (
+	KF_EXTENDED = 0x0100
+	KF_DLGMODE  = 0x0800
+	KF_MENUMODE = 0x1000
+	KF_ALTDOWN  = 0x2000
+	KF_REPEAT   = 0x4000
+	KF_UP       = 0x8000
+)
 const (
 	CHILDID_SELF      = 0
 	INDEXID_OBJECT    = 0
