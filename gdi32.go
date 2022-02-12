@@ -1072,6 +1072,7 @@ var (
 	createDC                *windows.LazyProc
 	createDIBSection        *windows.LazyProc
 	createFontIndirect      *windows.LazyProc
+	createFont              *windows.LazyProc
 	createEnhMetaFile       *windows.LazyProc
 	createIC                *windows.LazyProc
 	createPatternBrush      *windows.LazyProc
@@ -1155,6 +1156,7 @@ func init() {
 	createEnhMetaFile = libgdi32.NewProc("CreateEnhMetaFileW")
 	createRoundRectRgn = libgdi32.NewProc("CreateRoundRectRgn")
 	createFontIndirect = libgdi32.NewProc("CreateFontIndirectW")
+	createFont = libgdi32.NewProc("CreateFontW")
 	createIC = libgdi32.NewProc("CreateICW")
 	createPatternBrush = libgdi32.NewProc("CreatePatternBrush")
 	createRectRgn = libgdi32.NewProc("CreateRectRgn")
@@ -1224,11 +1226,11 @@ func AbortDoc(hdc HDC) int32 {
 	return int32(ret)
 }
 
-func AddFontResourceEx(lpszFilename *uint16, fl uint32, pdv unsafe.Pointer) int32 {
+func AddFontResourceEx(lpszFilename *uint16, fl uint32) int32 {
 	ret, _, _ := syscall.Syscall(addFontResourceEx.Addr(), 3,
 		uintptr(unsafe.Pointer(lpszFilename)),
 		uintptr(fl),
-		uintptr(pdv))
+		uintptr(0))
 
 	return int32(ret)
 }
@@ -1397,6 +1399,17 @@ func CreateFontIndirect(lplf *LOGFONT) HFONT {
 		uintptr(unsafe.Pointer(lplf)),
 		0,
 		0)
+
+	return HFONT(ret)
+}
+
+func CreateFont(cHeight, cWidth, cEscapement, cOrientation, cWeight int32, bItalic,
+	bUnderline, bStrikeOut, iCharSet, iOutPrecision, iClipPrecision,
+	iQuality, iPitchAndFamily uint32, pszFaceName *uint16) HFONT {
+	ret, _, _ := syscall.Syscall15(createFont.Addr(), 14, uintptr(cHeight), uintptr(cWidth), uintptr(cEscapement),
+		uintptr(cOrientation), uintptr(cWeight), uintptr(bItalic), uintptr(bUnderline), uintptr(bStrikeOut),
+		uintptr(iCharSet), uintptr(iOutPrecision), uintptr(iClipPrecision), uintptr(iQuality), uintptr(iPitchAndFamily),
+		uintptr(unsafe.Pointer(pszFaceName)), 0)
 
 	return HFONT(ret)
 }
@@ -1759,11 +1772,11 @@ func Rectangle_(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int32) boo
 	return ret != 0
 }
 
-func RemoveFontResourceEx(lpszFilename *uint16, fl uint32, pdv unsafe.Pointer) bool {
+func RemoveFontResourceEx(lpszFilename *uint16, fl uint32) bool {
 	ret, _, _ := syscall.Syscall(removeFontResourceEx.Addr(), 3,
 		uintptr(unsafe.Pointer(lpszFilename)),
 		uintptr(fl),
-		uintptr(pdv))
+		0)
 
 	return ret != 0
 }
