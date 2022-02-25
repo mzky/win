@@ -1109,6 +1109,7 @@ var (
 	playEnhMetaFile         *windows.LazyProc
 	polyline                *windows.LazyProc
 	rectangle               *windows.LazyProc
+	createPen               *windows.LazyProc
 	removeFontResourceEx    *windows.LazyProc
 	removeFontMemResourceEx *windows.LazyProc
 	resetDC                 *windows.LazyProc
@@ -1190,6 +1191,7 @@ func init() {
 	playEnhMetaFile = libgdi32.NewProc("PlayEnhMetaFile")
 	polyline = libgdi32.NewProc("Polyline")
 	rectangle = libgdi32.NewProc("Rectangle")
+	createPen = libgdi32.NewProc("CreatePen")
 	removeFontResourceEx = libgdi32.NewProc("RemoveFontResourceExW")
 	removeFontMemResourceEx = libgdi32.NewProc("RemoveFontMemResourceEx")
 	resetDC = libgdi32.NewProc("ResetDCW")
@@ -1758,6 +1760,17 @@ func Polyline(hdc HDC, lppt unsafe.Pointer, cPoints int32) bool {
 		uintptr(cPoints))
 
 	return ret != 0
+}
+func CreatePen(dwPenStyle, dwWidth uint32, col COLORREF) HPEN {
+	ret, _, _ := syscall.Syscall6(createPen.Addr(), 3,
+		uintptr(dwPenStyle),
+		uintptr(dwWidth),
+		uintptr(col),
+		0,
+		0,
+		0)
+
+	return HPEN(ret)
 }
 
 func Rectangle_(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int32) bool {
