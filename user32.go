@@ -71,6 +71,10 @@ const (
 	SIZE_MAXSHOW   = 3
 	SIZE_MAXHIDE   = 4
 )
+const (
+	ENUM_CURRENT_SETTINGS  = 0xFFFFFFFF
+	ENUM_REGISTRY_SETTINGS = 0xFFFFFFFE
+)
 
 // System commands
 const (
@@ -1485,6 +1489,12 @@ type MONITORINFO struct {
 	DwFlags   uint32
 }
 
+// http://msdn.microsoft.com/en-us/library/windows/desktop/dd145066.aspx
+type MONITORINFOEX struct {
+	MONITORINFO
+	SzDevice [CCHDEVICENAME]uint16
+}
+
 type (
 	HACCEL    HANDLE
 	HCURSOR   HANDLE
@@ -1831,6 +1841,7 @@ var (
 	getMenuItemInfo             *windows.LazyProc
 	getMessage                  *windows.LazyProc
 	getMonitorInfo              *windows.LazyProc
+	enumDisplaySettings         *windows.LazyProc
 	getParent                   *windows.LazyProc
 	getRawInputData             *windows.LazyProc
 	getScrollInfo               *windows.LazyProc
@@ -1862,6 +1873,7 @@ var (
 	loadMenu                    *windows.LazyProc
 	loadString                  *windows.LazyProc
 	messageBeep                 *windows.LazyProc
+	getKeyboardState            *windows.LazyProc
 	messageBox                  *windows.LazyProc
 	monitorFromWindow           *windows.LazyProc
 	moveWindow                  *windows.LazyProc
@@ -1985,6 +1997,7 @@ func init() {
 	getMenuItemInfo = libuser32.NewProc("GetMenuItemInfoW")
 	getMessage = libuser32.NewProc("GetMessageW")
 	getMonitorInfo = libuser32.NewProc("GetMonitorInfoW")
+	enumDisplaySettings = libuser32.NewProc("EnumDisplaySettingsW")
 	getParent = libuser32.NewProc("GetParent")
 	getRawInputData = libuser32.NewProc("GetRawInputData")
 	getScrollInfo = libuser32.NewProc("GetScrollInfo")
@@ -2079,6 +2092,7 @@ func init() {
 	windowFromDC = libuser32.NewProc("WindowFromDC")
 	windowFromPoint = libuser32.NewProc("WindowFromPoint")
 	setWindowText = libuser32.NewProc("SetWindowTextW")
+	getKeyboardState = libuser32.NewProc("GetKeyboardState")
 }
 
 func AddClipboardFormatListener(hwnd HWND) bool {
@@ -2092,6 +2106,12 @@ func AddClipboardFormatListener(hwnd HWND) bool {
 		0)
 
 	return ret != 0
+}
+func GetKeyboardState() (bool, []byte) {
+	keys := make([]byte, 256)
+	ret, _, _ := getKeyboardState.Call(
+		uintptr(unsafe.Pointer(&(keys)[0])))
+	return ret != 0, keys
 }
 
 func AdjustWindowRect(lpRect *RECT, dwStyle uint32, bMenu bool) bool {
@@ -2603,13 +2623,13 @@ func GetIconInfo(hicon HICON, piconinfo *ICONINFO) bool {
 	return ret != 0
 }
 
-func GetKeyState(nVirtKey int32) int16 {
+func GetKeyState(nVirtKey int32) uint16 {
 	ret, _, _ := syscall.Syscall(getKeyState.Addr(), 1,
 		uintptr(nVirtKey),
 		0,
 		0)
 
-	return int16(ret)
+	return uint16(ret)
 }
 
 func GetMenuCheckMarkDimensions() int32 {
@@ -2678,6 +2698,22 @@ func GetMonitorInfo(hMonitor HMONITOR, lpmi *MONITORINFO) bool {
 		uintptr(unsafe.Pointer(lpmi)),
 		0)
 
+	return ret != 0
+}
+
+func GetMonitorInfoEx(hMonitor HMONITOR, lpmi *MONITORINFOEX) bool {
+	ret, _, _ := syscall.Syscall(getMonitorInfo.Addr(), 2,
+		uintptr(hMonitor),
+		uintptr(unsafe.Pointer(lpmi)),
+		0)
+
+	return ret != 0
+}
+func EnumDisplaySettings(szDeviceName *uint16, iModeNum uint32, devMode *DEVMODE) bool {
+	ret, _, _ := enumDisplaySettings.Call(
+		uintptr(unsafe.Pointer(szDeviceName)),
+		uintptr(iModeNum),
+		uintptr(unsafe.Pointer(devMode)))
 	return ret != 0
 }
 
