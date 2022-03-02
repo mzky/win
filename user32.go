@@ -910,6 +910,10 @@ const (
 	KF_UP       = 0x8000
 )
 const (
+	MA_NOACTIVATE       = 3
+	MA_NOACTIVATEANDEAT = 4
+)
+const (
 	CHILDID_SELF      = 0
 	INDEXID_OBJECT    = 0
 	INDEXID_CONTAINER = 0
