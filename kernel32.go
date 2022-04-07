@@ -101,6 +101,7 @@ type (
 	HMODULE       uintptr
 	HWINEVENTHOOK HANDLE
 	HRSRC         uintptr
+	HKL           HANDLE
 )
 
 type FILETIME struct {

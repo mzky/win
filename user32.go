@@ -1480,6 +1480,16 @@ const (
 	WB_RIGHT       = 1
 	WB_ISDELIMITER = 2
 )
+const (
+	HKL_NEXT HKL = 1
+	HKL_PREV HKL = 0
+)
+const (
+	KLF_REORDER       uint = 0x00000008
+	KLF_RESET         uint = 0x40000000
+	KLF_SETFORPROCESS uint = 0x00000100
+	KLF_SHIFTLOCK     uint = 0x00010000
+)
 
 type NMBCDROPDOWN struct {
 	Hdr      NMHDR
@@ -1878,6 +1888,9 @@ var (
 	loadString                  *windows.LazyProc
 	messageBeep                 *windows.LazyProc
 	getKeyboardState            *windows.LazyProc
+	getKeyboardLayoutList       *windows.LazyProc
+	activateKeyboardLayout      *windows.LazyProc
+	loadKeyboardLayout          *windows.LazyProc
 	messageBox                  *windows.LazyProc
 	monitorFromWindow           *windows.LazyProc
 	moveWindow                  *windows.LazyProc
@@ -2097,6 +2110,9 @@ func init() {
 	windowFromPoint = libuser32.NewProc("WindowFromPoint")
 	setWindowText = libuser32.NewProc("SetWindowTextW")
 	getKeyboardState = libuser32.NewProc("GetKeyboardState")
+	getKeyboardLayoutList = libuser32.NewProc("GetKeyboardLayoutList")
+	activateKeyboardLayout = libuser32.NewProc("ActivateKeyboardLayout")
+	loadKeyboardLayout = libuser32.NewProc("LoadKeyboardLayoutW")
 }
 
 func AddClipboardFormatListener(hwnd HWND) bool {
@@ -2116,6 +2132,22 @@ func GetKeyboardState() (bool, []byte) {
 	ret, _, _ := getKeyboardState.Call(
 		uintptr(unsafe.Pointer(&(keys)[0])))
 	return ret != 0, keys
+}
+func GetKeyboardLayoutList(count int) (bool, []HKL) {
+	list := make([]HKL, count)
+	ret, _, _ := getKeyboardLayoutList.Call(uintptr(count), uintptr(unsafe.Pointer(&(list)[0])))
+	return ret != 0, list
+}
+
+func LoadKeyboardLayout(hkl HKL, flags uint) bool {
+	ret, _, _ := loadKeyboardLayout.Call(uintptr(hkl), uintptr(flags))
+	return ret != 0
+}
+
+func ActivateKeyboardLayout(klId string, flags uint) bool {
+	utf16 := windows.StringToUTF16Ptr(klId)
+	ret, _, _ := activateKeyboardLayout.Call(uintptr(unsafe.Pointer(utf16)), uintptr(flags))
+	return ret != 0
 }
 
 func AdjustWindowRect(lpRect *RECT, dwStyle uint32, bMenu bool) bool {
