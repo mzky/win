@@ -1879,6 +1879,7 @@ var (
 	isIconic                    *windows.LazyProc
 	isWindowEnabled             *windows.LazyProc
 	isWindowVisible             *windows.LazyProc
+	isWindow                    *windows.LazyProc
 	isZoomed                    *windows.LazyProc
 	killTimer                   *windows.LazyProc
 	loadCursor                  *windows.LazyProc
@@ -2043,6 +2044,7 @@ func init() {
 	isIconic = libuser32.NewProc("IsIconic")
 	isWindowEnabled = libuser32.NewProc("IsWindowEnabled")
 	isWindowVisible = libuser32.NewProc("IsWindowVisible")
+	isWindow = libuser32.NewProc("IsWindow")
 	isZoomed = libuser32.NewProc("IsZoomed")
 	killTimer = libuser32.NewProc("KillTimer")
 	loadCursor = libuser32.NewProc("LoadCursorW")
@@ -2953,6 +2955,15 @@ func IsWindowEnabled(hWnd HWND) bool {
 
 func IsWindowVisible(hWnd HWND) bool {
 	ret, _, _ := syscall.Syscall(isWindowVisible.Addr(), 1,
+		uintptr(hWnd),
+		0,
+		0)
+
+	return ret != 0
+}
+
+func IsWindow(hWnd HWND) bool {
+	ret, _, _ := syscall.Syscall(isWindow.Addr(), 1,
 		uintptr(hWnd),
 		0,
 		0)
