@@ -8,6 +8,7 @@ package win
 
 import (
 	"syscall"
+	"unicode/utf16"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -63,6 +64,10 @@ const (
 	IDTRYAGAIN = 10
 	IDCONTINUE = 11
 	IDTIMEOUT  = 32000
+)
+const (
+	KLF_ACTIVATE    = 0x1
+	KLF_REPLACELANG = 0x10
 )
 const (
 	SIZE_RESTORED  = 0
@@ -1891,6 +1896,7 @@ var (
 	getKeyboardState            *windows.LazyProc
 	getKeyboardLayoutList       *windows.LazyProc
 	activateKeyboardLayout      *windows.LazyProc
+	getKeyboardLayoutName       *windows.LazyProc
 	loadKeyboardLayout          *windows.LazyProc
 	messageBox                  *windows.LazyProc
 	monitorFromWindow           *windows.LazyProc
@@ -2114,6 +2120,7 @@ func init() {
 	getKeyboardState = libuser32.NewProc("GetKeyboardState")
 	getKeyboardLayoutList = libuser32.NewProc("GetKeyboardLayoutList")
 	activateKeyboardLayout = libuser32.NewProc("ActivateKeyboardLayout")
+	getKeyboardLayoutName = libuser32.NewProc("GetKeyboardLayoutNameW")
 	loadKeyboardLayout = libuser32.NewProc("LoadKeyboardLayoutW")
 }
 
@@ -2135,21 +2142,28 @@ func GetKeyboardState() (bool, []byte) {
 		uintptr(unsafe.Pointer(&(keys)[0])))
 	return ret != 0, keys
 }
-func GetKeyboardLayoutList(count int) (bool, []HKL) {
+func GetKeyboardLayoutList(count int) []HKL {
 	list := make([]HKL, count)
 	ret, _, _ := getKeyboardLayoutList.Call(uintptr(count), uintptr(unsafe.Pointer(&(list)[0])))
-	return ret != 0, list
+	return list[:ret]
 }
 
-func LoadKeyboardLayout(hkl HKL, flags uint) bool {
-	ret, _, _ := loadKeyboardLayout.Call(uintptr(hkl), uintptr(flags))
-	return ret != 0
+func LoadKeyboardLayout(name string, flags uint) HKL {
+	ret, _, _ := loadKeyboardLayout.Call(uintptr(unsafe.Pointer(windows.StringToUTF16Ptr(name))), uintptr(flags))
+	return HKL(ret)
 }
 
-func ActivateKeyboardLayout(klId string, flags uint) bool {
-	utf16 := windows.StringToUTF16Ptr(klId)
-	ret, _, _ := activateKeyboardLayout.Call(uintptr(unsafe.Pointer(utf16)), uintptr(flags))
+func ActivateKeyboardLayout(klId HKL, flags uint) bool {
+	ret, _, _ := activateKeyboardLayout.Call(uintptr(klId), uintptr(flags))
 	return ret != 0
+}
+func GetKeyboardLayoutName() string {
+	str := make([]uint16, 9)
+	ret, _, _ := getKeyboardLayoutName.Call(uintptr(unsafe.Pointer(&str[0])))
+	if ret != 0 {
+		return string(utf16.Decode(str))
+	}
+	return ""
 }
 
 func AdjustWindowRect(lpRect *RECT, dwStyle uint32, bMenu bool) bool {
