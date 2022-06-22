@@ -332,6 +332,7 @@ var (
 	shGetStockIconInfo     *windows.LazyProc
 	shellExecute           *windows.LazyProc
 	shell_NotifyIcon       *windows.LazyProc
+	shGetDesktopFolder     *windows.LazyProc
 )
 
 func init() {
@@ -352,6 +353,7 @@ func init() {
 	shellExecute = libshell32.NewProc("ShellExecuteW")
 	shell_NotifyIcon = libshell32.NewProc("Shell_NotifyIconW")
 	shParseDisplayName = libshell32.NewProc("SHParseDisplayName")
+	shGetDesktopFolder = libshell32.NewProc("SHGetDesktopFolder")
 }
 
 func DragAcceptFiles(hWnd HWND, fAccept bool) bool {
@@ -491,4 +493,15 @@ func Shell_NotifyIcon(dwMessage uint32, lpdata *NOTIFYICONDATA) bool {
 		0)
 
 	return ret != 0
+}
+
+func SHGetDesktopFolder() (IShellFolder, HRESULT) {
+	var lpData IShellFolder
+
+	ret, _, _ := syscall.Syscall(shGetDesktopFolder.Addr(), 1,
+		uintptr(unsafe.Pointer(&lpData)),
+		0,
+		0)
+
+	return lpData, HRESULT(ret)
 }
