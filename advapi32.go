@@ -59,11 +59,12 @@ var (
 	libadvapi32 *windows.LazyDLL
 
 	// Functions
-	regCloseKey     *windows.LazyProc
-	regOpenKeyEx    *windows.LazyProc
-	regQueryValueEx *windows.LazyProc
-	regEnumValue    *windows.LazyProc
-	regSetValueEx   *windows.LazyProc
+	regCloseKey         *windows.LazyProc
+	regOpenKeyEx        *windows.LazyProc
+	regQueryValueEx     *windows.LazyProc
+	regEnumValue        *windows.LazyProc
+	regSetValueEx       *windows.LazyProc
+	createProcessAsUser *windows.LazyProc
 )
 
 func init() {
@@ -76,6 +77,7 @@ func init() {
 	regQueryValueEx = libadvapi32.NewProc("RegQueryValueExW")
 	regEnumValue = libadvapi32.NewProc("RegEnumValueW")
 	regSetValueEx = libadvapi32.NewProc("RegSetValueExW")
+	createProcessAsUser = libadvapi32.NewProc("CreateProcessAsUser")
 }
 
 func RegCloseKey(hKey HKEY) int32 {
@@ -134,4 +136,43 @@ func RegSetValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpDataType uint64
 		uintptr(unsafe.Pointer(lpData)),
 		uintptr(cbData))
 	return int32(ret)
+}
+
+type StartupInfo struct {
+	cb              int
+	lpReserved      uintptr //str
+	lpDesktop       uintptr //str
+	lpTitle         uintptr //str
+	dwX             uint
+	dwY             uint
+	dwXSize         uint
+	dwYSize         uint
+	dwXCountChars   uint
+	dwYCountChars   uint
+	dwFillAttribute uint
+	dwFlags         uint
+	wShowWindow     int16
+	cbReserved2     int16
+	lpReserved2     uintptr
+	hStdInput       uintptr
+	hStdOutput      uintptr
+	hStdError       uintptr
+}
+type ProcessInformation struct {
+	hProcess    uintptr
+	hThread     uintptr
+	dwProcessId uint
+	dwThreadId  uint
+}
+
+func CreateProcessAsUser(token, appName, cmdLine, pAttr, tAttr uintptr, inherit bool, flags uint, env, curDir uintptr, sInfo *StartupInfo) (ProcessInformation, int32) {
+	var pInfo ProcessInformation
+	ret, _, _ := syscall.Syscall12(createProcessAsUser.Addr(), 11, token, appName, cmdLine, pAttr, tAttr,
+		uintptr(BoolToBOOL(inherit)),
+		uintptr(flags),
+		env,
+		curDir,
+		uintptr(unsafe.Pointer(sInfo)),
+		uintptr(unsafe.Pointer(&pInfo)), 0)
+	return pInfo, int32(ret)
 }
