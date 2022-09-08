@@ -1496,6 +1496,8 @@ const (
 	KLF_SHIFTLOCK     uint = 0x00010000
 )
 
+type DWORD uint32
+type UINT uint32
 type NMBCDROPDOWN struct {
 	Hdr      NMHDR
 	RcButton RECT
@@ -1836,6 +1838,7 @@ var (
 	endDeferWindowPos           *windows.LazyProc
 	endDialog                   *windows.LazyProc
 	endPaint                    *windows.LazyProc
+	enumWindows                 *windows.LazyProc
 	enumChildWindows            *windows.LazyProc
 	findWindow                  *windows.LazyProc
 	getActiveWindow             *windows.LazyProc
@@ -1871,6 +1874,7 @@ var (
 	getSystemMetrics            *windows.LazyProc
 	getSystemMetricsForDpi      *windows.LazyProc
 	getWindow                   *windows.LazyProc
+	getWindowInfo               *windows.LazyProc
 	getWindowLong               *windows.LazyProc
 	getWindowLongPtr            *windows.LazyProc
 	getWindowPlacement          *windows.LazyProc
@@ -1998,6 +2002,7 @@ func init() {
 	endDialog = libuser32.NewProc("EndDialog")
 	endPaint = libuser32.NewProc("EndPaint")
 	intersectRect = libuser32.NewProc("IntersectRect")
+	enumWindows = libuser32.NewProc("EnumWindows")
 	enumChildWindows = libuser32.NewProc("EnumChildWindows")
 	findWindow = libuser32.NewProc("FindWindowW")
 	getActiveWindow = libuser32.NewProc("GetActiveWindow")
@@ -2033,6 +2038,7 @@ func init() {
 	getSystemMetrics = libuser32.NewProc("GetSystemMetrics")
 	getSystemMetricsForDpi = libuser32.NewProc("GetSystemMetricsForDpi")
 	getWindow = libuser32.NewProc("GetWindow")
+	getWindowInfo = libuser32.NewProc("GetWindowInfo")
 	getWindowLong = libuser32.NewProc("GetWindowLongW")
 	// On 32 bit GetWindowLongPtrW is not available
 	if is64bit {
@@ -2528,11 +2534,20 @@ func EndPaint(hwnd HWND, lpPaint *PAINTSTRUCT) bool {
 	return ret != 0
 }
 
-func EnumChildWindows(hWndParent HWND, lpEnumFunc, lParam uintptr) bool {
+type EnumWindowsProc func(hWnd HWND, lParam uintptr) uintptr
+
+func EnumChildWindows(hWndParent HWND, lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
 	ret, _, _ := syscall.Syscall(enumChildWindows.Addr(), 3,
 		uintptr(hWndParent),
-		lpEnumFunc,
+		syscall.NewCallbackCDecl(lpEnumFunc),
 		lParam)
+
+	return ret != 0
+}
+func EnumWindows(lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
+	ret, _, _ := syscall.Syscall(enumWindows.Addr(), 2,
+		syscall.NewCallbackCDecl(lpEnumFunc),
+		lParam, 0)
 
 	return ret != 0
 }
@@ -2564,24 +2579,27 @@ func GetAncestor(hWnd HWND, gaFlags uint32) HWND {
 	return HWND(ret)
 }
 
-func GetCaretPos(lpPoint *POINT) bool {
+func GetCaretPos() (POINT, bool) {
+	var p POINT
 	ret, _, _ := syscall.Syscall(getCaretPos.Addr(), 1,
-		uintptr(unsafe.Pointer(lpPoint)),
+		uintptr(unsafe.Pointer(&p)),
 		0,
 		0)
 
-	return ret != 0
+	return p, ret != 0
 }
 
-func GetClassName(hWnd HWND, className *uint16, maxCount int) (int, error) {
+func GetClassName(hWnd HWND) (string, error) {
+	className := make([]uint16, MAX_PATH)
 	ret, _, e := syscall.Syscall(getClassName.Addr(), 3,
 		uintptr(hWnd),
-		uintptr(unsafe.Pointer(className)),
-		uintptr(maxCount))
+		uintptr(unsafe.Pointer(&className[0])),
+		uintptr(MAX_PATH))
 	if ret == 0 {
-		return 0, e
+		return "", e
 	}
-	return int(ret), nil
+	className[int(ret)] = 0
+	return windows.UTF16PtrToString(&(className[0])), nil
 }
 
 func GetClientRect(hWnd HWND, rect *RECT) bool {
@@ -2871,6 +2889,29 @@ func GetWindow(hWnd HWND, uCmd uint32) HWND {
 	return HWND(ret)
 }
 
+type WindowInfo struct {
+	cbSize          DWORD //DWORD
+	rcWindow        RECT  //RECT
+	rcClient        RECT  //RECT
+	dwStyle         DWORD //DWORD
+	dwExStyle       DWORD //DWORD
+	dwWindowStatus  DWORD //DWORD
+	cxWindowBorders UINT  //UINT
+	cyWindowBorders UINT  //UINT
+	atomWindowType  ATOM  //ATOM
+	wCreatorVersion DWORD //WORD
+}
+
+func GetWindowInfo(hWnd HWND) (WindowInfo, bool) {
+	var info WindowInfo
+	ret, _, _ := syscall.Syscall(getWindow.Addr(), 2,
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(&info)),
+		0)
+
+	return info, ret == TRUE
+}
+
 func GetWindowLong(hWnd HWND, index int32) int32 {
 	ret, _, _ := syscall.Syscall(getWindowLong.Addr(), 2,
 		uintptr(hWnd),
@@ -2898,13 +2939,14 @@ func GetWindowPlacement(hWnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
 	return ret != 0
 }
 
-func GetWindowRect(hWnd HWND, rect *RECT) bool {
+func GetWindowRect(hWnd HWND) (RECT, bool) {
+	var rect RECT
 	ret, _, _ := syscall.Syscall(getWindowRect.Addr(), 2,
 		uintptr(hWnd),
-		uintptr(unsafe.Pointer(rect)),
+		uintptr(unsafe.Pointer(&rect)),
 		0)
 
-	return ret != 0
+	return rect, ret != 0
 }
 
 func InsertMenuItem(hMenu HMENU, uItem uint32, fByPosition bool, lpmii *MENUITEMINFO) bool {
