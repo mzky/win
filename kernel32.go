@@ -68,6 +68,7 @@ var (
 	getCurrentThreadId                 *windows.LazyProc
 	getLastError                       *windows.LazyProc
 	getLocaleInfo                      *windows.LazyProc
+	getDiskFreeSpaceEx                 *windows.LazyProc
 	getLogicalDriveStrings             *windows.LazyProc
 	getModuleHandle                    *windows.LazyProc
 	getNumberFormat                    *windows.LazyProc
@@ -88,6 +89,7 @@ var (
 	sizeofResource                     *windows.LazyProc
 	setUnhandledExceptionFilter        *windows.LazyProc
 	systemTimeToFileTime               *windows.LazyProc
+	wTSGetActiveConsoleSessionId       *windows.LazyProc
 )
 
 type (
@@ -141,13 +143,38 @@ type ACTCTX struct {
 	Module                HMODULE
 }
 
+type WTSSESSIONINFO struct {
+	SessionID       uint32
+	pWinStationName uintptr
+	State           WTSCONNECTSTATECLASS
+}
+type WTSCONNECTSTATECLASS int
+
+const (
+	WTSActive WTSCONNECTSTATECLASS = iota
+	WTSConnected
+	WTSConnectQuery
+	WTSShadow
+	WTSDisconnected
+	WTSIdle
+	WTSListen
+	WTSReset
+	WTSDown
+	WTSInit
+)
+
+type PROCESSINFORMATION struct {
+	HProcess, HThread       uintptr
+	dwProcessId, dwThreadId uint
+}
+
 func init() {
 	// Library
 	libkernel32 = windows.NewLazySystemDLL("kernel32.dll")
-
 	// Functions
 	activateActCtx = libkernel32.NewProc("ActivateActCtx")
 	closeHandle = libkernel32.NewProc("CloseHandle")
+	wTSGetActiveConsoleSessionId = libkernel32.NewProc("WTSGetActiveConsoleSessionId")
 	createActCtx = libkernel32.NewProc("CreateActCtxW")
 	fileTimeToSystemTime = libkernel32.NewProc("FileTimeToSystemTime")
 	findResource = libkernel32.NewProc("FindResourceW")
@@ -157,6 +184,7 @@ func init() {
 	getLastError = libkernel32.NewProc("GetLastError")
 	getLocaleInfo = libkernel32.NewProc("GetLocaleInfoW")
 	getLogicalDriveStrings = libkernel32.NewProc("GetLogicalDriveStringsW")
+	getDiskFreeSpaceEx = libkernel32.NewProc("GetDiskFreeSpaceExW")
 	getModuleHandle = libkernel32.NewProc("GetModuleHandleW")
 	getNumberFormat = libkernel32.NewProc("GetNumberFormatW")
 	getPhysicallyInstalledSystemMemory = libkernel32.NewProc("GetPhysicallyInstalledSystemMemory")
@@ -460,4 +488,26 @@ func SetUnhandledExceptionFilter(callback OnUnhandledException) {
 		syscall.NewCallbackCDecl(callback),
 		0,
 		0)
+}
+func GetDiskFreeSpaceEx(dirName string) (r bool,
+	freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes uint64) {
+	fromString, err := syscall.UTF16FromString(dirName)
+	if err != nil {
+		return
+	}
+	ret, _, _ := getDiskFreeSpaceEx.Call(
+		uintptr(unsafe.Pointer(&fromString[0])),
+		uintptr(unsafe.Pointer(&freeBytesAvailable)),
+		uintptr(unsafe.Pointer(&totalNumberOfBytes)),
+		uintptr(unsafe.Pointer(&totalNumberOfFreeBytes)))
+	return ret != 0,
+		freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes
+}
+
+func WTSGetActiveConsoleSessionId() uint32 {
+	ret, _, _ := syscall.Syscall(wTSGetActiveConsoleSessionId.Addr(), 0,
+		0,
+		0,
+		0)
+	return uint32(ret)
 }
