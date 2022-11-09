@@ -1957,6 +1957,8 @@ var (
 	windowFromDC                *windows.LazyProc
 	windowFromPoint             *windows.LazyProc
 	intersectRect               *windows.LazyProc
+	keybdEvent                  *windows.LazyProc
+	getWindowText               *windows.LazyProc
 )
 
 func init() {
@@ -2130,6 +2132,8 @@ func init() {
 	getKeyboardLayoutName = libuser32.NewProc("GetKeyboardLayoutNameW")
 	getKeyboardLayout = libuser32.NewProc("GetKeyboardLayout")
 	loadKeyboardLayout = libuser32.NewProc("LoadKeyboardLayoutW")
+	keybdEvent = libuser32.NewProc("keybd_event")
+	getWindowText = libuser32.NewProc("GetWindowTextW")
 }
 
 func AddClipboardFormatListener(hwnd HWND) bool {

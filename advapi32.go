@@ -27,6 +27,9 @@ const (
 
 const (
 	ERROR_NO_MORE_ITEMS = 259
+
+	TokenPrimary       = 1
+	TokenImpersonation = 2
 )
 
 type (
@@ -40,14 +43,14 @@ const (
 	REG_SZ               = 1 // Unicode nul terminated string
 	REG_EXPAND_SZ        = 2 // Unicode nul terminated string
 	// (with environment variable references)
-	REG_BINARY                     = 3 // Free form binary
-	REG_DWORD                      = 4 // 32-bit number
-	REG_DWORD_LITTLE_ENDIAN        = 4 // 32-bit number (same as REG_DWORD)
-	REG_DWORD_BIG_ENDIAN           = 5 // 32-bit number
-	REG_LINK                       = 6 // Symbolic Link (unicode)
-	REG_MULTI_SZ                   = 7 // Multiple Unicode strings
-	REG_RESOURCE_LIST              = 8 // Resource list in the resource map
-	REG_FULL_RESOURCE_DESCRIPTOR   = 9 // Resource list in the hardware description
+	REG_BINARY                     = 3  // Free form binary
+	REG_DWORD                      = 4  // 32-bit number
+	REG_DWORD_LITTLE_ENDIAN        = 4  // 32-bit number (same as REG_DWORD)
+	REG_DWORD_BIG_ENDIAN           = 5  // 32-bit number
+	REG_LINK                       = 6  // Symbolic Link (unicode)
+	REG_MULTI_SZ                   = 7  // Multiple Unicode strings
+	REG_RESOURCE_LIST              = 8  // Resource list in the resource map
+	REG_FULL_RESOURCE_DESCRIPTOR   = 9  // Resource list in the hardware description
 	REG_RESOURCE_REQUIREMENTS_LIST = 10
 	REG_QWORD                      = 11 // 64-bit number
 	REG_QWORD_LITTLE_ENDIAN        = 11 // 64-bit number (same as REG_QWORD)
@@ -77,7 +80,7 @@ func init() {
 	regQueryValueEx = libadvapi32.NewProc("RegQueryValueExW")
 	regEnumValue = libadvapi32.NewProc("RegEnumValueW")
 	regSetValueEx = libadvapi32.NewProc("RegSetValueExW")
-	createProcessAsUser = libadvapi32.NewProc("CreateProcessAsUser")
+	createProcessAsUser = libadvapi32.NewProc("CreateProcessAsUserW")
 }
 
 func RegCloseKey(hKey HKEY) int32 {
@@ -138,41 +141,32 @@ func RegSetValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpDataType uint64
 	return int32(ret)
 }
 
-type StartupInfo struct {
-	cb              int
-	lpReserved      uintptr //str
-	lpDesktop       uintptr //str
-	lpTitle         uintptr //str
-	dwX             uint
-	dwY             uint
-	dwXSize         uint
-	dwYSize         uint
-	dwXCountChars   uint
-	dwYCountChars   uint
-	dwFillAttribute uint
-	dwFlags         uint
-	wShowWindow     int16
-	cbReserved2     int16
-	lpReserved2     uintptr
-	hStdInput       uintptr
-	hStdOutput      uintptr
-	hStdError       uintptr
-}
-type ProcessInformation struct {
-	hProcess    uintptr
-	hThread     uintptr
-	dwProcessId uint
-	dwThreadId  uint
-}
-
-func CreateProcessAsUser(token, appName, cmdLine, pAttr, tAttr uintptr, inherit bool, flags uint, env, curDir uintptr, sInfo *StartupInfo) (ProcessInformation, int32) {
-	var pInfo ProcessInformation
-	ret, _, _ := syscall.Syscall12(createProcessAsUser.Addr(), 11, token, appName, cmdLine, pAttr, tAttr,
+func CreateProcessAsUser(token windows.Token, appName, cmdLine string, pAttr, tAttr uintptr, inherit bool, flags int,
+	env *uint16, curDir string, sInfo *windows.StartupInfo) (windows.ProcessInformation, bool) {
+	var pInfo windows.ProcessInformation
+	an, err := syscall.UTF16PtrFromString(appName)
+	if err != nil {
+		return pInfo, false
+	}
+	var cl, cd *uint16
+	if len(cmdLine) > 0 {
+		cl, err = syscall.UTF16PtrFromString(cmdLine)
+		if err != nil {
+			return pInfo, false
+		}
+	}
+	if len(curDir) > 0 {
+		cd, err = syscall.UTF16PtrFromString(curDir)
+		if err != nil {
+			return pInfo, false
+		}
+	}
+	ret, _, _ := syscall.Syscall12(createProcessAsUser.Addr(), 11, uintptr(token), uintptr(unsafe.Pointer(an)), uintptr(unsafe.Pointer(cl)), pAttr, tAttr,
 		uintptr(BoolToBOOL(inherit)),
 		uintptr(flags),
-		env,
-		curDir,
+		uintptr(unsafe.Pointer(env)),
+		uintptr(unsafe.Pointer(cd)),
 		uintptr(unsafe.Pointer(sInfo)),
 		uintptr(unsafe.Pointer(&pInfo)), 0)
-	return pInfo, int32(ret)
+	return pInfo, int32(ret) == TRUE
 }
