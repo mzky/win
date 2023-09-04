@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
@@ -90,6 +91,7 @@ var (
 	setUnhandledExceptionFilter        *windows.LazyProc
 	systemTimeToFileTime               *windows.LazyProc
 	wTSGetActiveConsoleSessionId       *windows.LazyProc
+	getSystemWow64DirectoryW           *windows.LazyProc
 )
 
 type (
@@ -175,6 +177,7 @@ func init() {
 	activateActCtx = libkernel32.NewProc("ActivateActCtx")
 	closeHandle = libkernel32.NewProc("CloseHandle")
 	wTSGetActiveConsoleSessionId = libkernel32.NewProc("WTSGetActiveConsoleSessionId")
+	getSystemWow64DirectoryW = libkernel32.NewProc("GetSystemWow64DirectoryW")
 	createActCtx = libkernel32.NewProc("CreateActCtxW")
 	fileTimeToSystemTime = libkernel32.NewProc("FileTimeToSystemTime")
 	findResource = libkernel32.NewProc("FindResourceW")
@@ -510,4 +513,11 @@ func WTSGetActiveConsoleSessionId() uint32 {
 		0,
 		0)
 	return uint32(ret)
+}
+func GetSystemWow64DirectoryW() bool {
+	ret, _, _ := syscall.Syscall(getSystemWow64DirectoryW.Addr(), 2,
+		0,
+		0,
+		0)
+	return ret > 0
 }
