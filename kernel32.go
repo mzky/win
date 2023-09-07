@@ -92,6 +92,7 @@ var (
 	systemTimeToFileTime               *windows.LazyProc
 	wTSGetActiveConsoleSessionId       *windows.LazyProc
 	getSystemWow64DirectoryW           *windows.LazyProc
+	getSystemInfo                      *windows.LazyProc
 )
 
 type (
@@ -143,6 +144,35 @@ type ACTCTX struct {
 	ResourceName          *uint16 // UTF-16 string
 	ApplicationName       *uint16 // UTF-16 string
 	Module                HMODULE
+}
+
+const (
+	ROCESSOR_ARCHITECTURE_AMD64    = 9      //x64 (AMD 或 Intel)
+	PROCESSOR_ARCHITECTURE_ARM     = 5      //ARM
+	PROCESSOR_ARCHITECTURE_ARM64   = 12     //ARM64
+	PROCESSOR_ARCHITECTURE_IA64    = 6      //基于 Intel Itanium
+	PROCESSOR_ARCHITECTURE_INTEL   = 0      //x86
+	PROCESSOR_ARCHITECTURE_UNKNOWN = 0xffff //未知的体系结构。
+
+	PROCESSOR_INTEL_386     = 386
+	PROCESSOR_INTEL_486     = 486
+	PROCESSOR_INTEL_PENTIUM = 586
+	PROCESSOR_INTEL_IA64    = 2200
+	PROCESSOR_AMD_X8664     = 8664
+)
+
+type SYSTEMINFO struct {
+	WProcessorId                uint16
+	WReserved                   uint16
+	DwPageSize                  uint32
+	LpMinimumApplicationAddress uintptr
+	LpMaximumApplicationAddress uintptr
+	DwActiveProcessorMask       uintptr
+	DwNumberOfProcessors        uint32
+	DwProcessorType             uint32
+	DwAllocationGranularity     uint32
+	DwProcessorLevel            uint16
+	DwProcessorRevision         uint16
 }
 
 type WTSSESSIONINFO struct {
@@ -207,6 +237,7 @@ func init() {
 	sizeofResource = libkernel32.NewProc("SizeofResource")
 	systemTimeToFileTime = libkernel32.NewProc("SystemTimeToFileTime")
 	setUnhandledExceptionFilter = libkernel32.NewProc("SetUnhandledExceptionFilter")
+	getSystemInfo = libkernel32.NewProc("GetSystemInfo")
 }
 
 func ActivateActCtx(ctx HANDLE) (uintptr, bool) {
@@ -520,4 +551,12 @@ func GetSystemWow64DirectoryW() bool {
 		0,
 		0)
 	return ret > 0
+}
+func GetSystemInfo() SYSTEMINFO {
+	var a SYSTEMINFO
+	syscall.Syscall(getSystemInfo.Addr(), 1,
+		uintptr(unsafe.Pointer(&a)),
+		0,
+		0)
+	return a
 }
