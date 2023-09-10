@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
@@ -1839,6 +1840,7 @@ var (
 	endDialog                   *windows.LazyProc
 	endPaint                    *windows.LazyProc
 	enumWindows                 *windows.LazyProc
+	enumThreadWindows           *windows.LazyProc
 	enumChildWindows            *windows.LazyProc
 	findWindow                  *windows.LazyProc
 	getActiveWindow             *windows.LazyProc
@@ -2005,6 +2007,7 @@ func init() {
 	endPaint = libuser32.NewProc("EndPaint")
 	intersectRect = libuser32.NewProc("IntersectRect")
 	enumWindows = libuser32.NewProc("EnumWindows")
+	enumThreadWindows = libuser32.NewProc("EnumThreadWindows")
 	enumChildWindows = libuser32.NewProc("EnumChildWindows")
 	findWindow = libuser32.NewProc("FindWindowW")
 	getActiveWindow = libuser32.NewProc("GetActiveWindow")
@@ -2552,6 +2555,14 @@ func EnumWindows(lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
 	ret, _, _ := syscall.Syscall(enumWindows.Addr(), 2,
 		syscall.NewCallbackCDecl(lpEnumFunc),
 		lParam, 0)
+
+	return ret != 0
+}
+
+func EnumThreadWindows(threadId uint32, lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
+	ret, _, _ := syscall.Syscall(enumThreadWindows.Addr(), 3, uintptr(threadId),
+		syscall.NewCallbackCDecl(lpEnumFunc),
+		lParam)
 
 	return ret != 0
 }
