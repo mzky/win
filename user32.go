@@ -1907,12 +1907,14 @@ var (
 	loadKeyboardLayout          *windows.LazyProc
 	messageBox                  *windows.LazyProc
 	monitorFromWindow           *windows.LazyProc
+	monitorFromPoint            *windows.LazyProc
 	moveWindow                  *windows.LazyProc
 	notifyWinEvent              *windows.LazyProc
 	unregisterClass             *windows.LazyProc
 	openClipboard               *windows.LazyProc
 	peekMessage                 *windows.LazyProc
 	postMessage                 *windows.LazyProc
+	postThreadMessage           *windows.LazyProc
 	postQuitMessage             *windows.LazyProc
 	redrawWindow                *windows.LazyProc
 	registerClassEx             *windows.LazyProc
@@ -1932,6 +1934,7 @@ var (
 	setCursorPos                *windows.LazyProc
 	setFocus                    *windows.LazyProc
 	setForegroundWindow         *windows.LazyProc
+	switchToThisWindow          *windows.LazyProc
 	setMenu                     *windows.LazyProc
 	setMenuDefaultItem          *windows.LazyProc
 	setMenuInfo                 *windows.LazyProc
@@ -2073,12 +2076,14 @@ func init() {
 	messageBeep = libuser32.NewProc("MessageBeep")
 	messageBox = libuser32.NewProc("MessageBoxW")
 	monitorFromWindow = libuser32.NewProc("MonitorFromWindow")
+	monitorFromPoint = libuser32.NewProc("MonitorFromPoint")
 	moveWindow = libuser32.NewProc("MoveWindow")
 	notifyWinEvent = libuser32.NewProc("NotifyWinEvent")
 	unregisterClass = libuser32.NewProc("UnregisterClassW")
 	openClipboard = libuser32.NewProc("OpenClipboard")
 	peekMessage = libuser32.NewProc("PeekMessageW")
 	postMessage = libuser32.NewProc("PostMessageW")
+	postThreadMessage = libuser32.NewProc("PostThreadMessageW")
 	postQuitMessage = libuser32.NewProc("PostQuitMessage")
 	redrawWindow = libuser32.NewProc("RedrawWindow")
 	registerClassEx = libuser32.NewProc("RegisterClassExW")
@@ -2098,6 +2103,7 @@ func init() {
 	setCursorPos = libuser32.NewProc("SetCursorPos")
 	setFocus = libuser32.NewProc("SetFocus")
 	setForegroundWindow = libuser32.NewProc("SetForegroundWindow")
+	switchToThisWindow = libuser32.NewProc("SwitchToThisWindow")
 	setMenu = libuser32.NewProc("SetMenu")
 	setMenuDefaultItem = libuser32.NewProc("SetMenuDefaultItem")
 	setMenuInfo = libuser32.NewProc("SetMenuInfo")
@@ -3160,6 +3166,13 @@ func MonitorFromWindow(hwnd HWND, dwFlags uint32) HMONITOR {
 
 	return HMONITOR(ret)
 }
+func MonitorFromPoint(x, y int32, dwFlags uint32) HMONITOR {
+	ret, _, _ := syscall.Syscall(monitorFromPoint.Addr(), 2,
+		uintptr((uint64(x)&0xFFFFFFFF)|(uint64(y)<<32)),
+		uintptr(dwFlags), 0)
+
+	return HMONITOR(ret)
+}
 
 func MoveWindow(hWnd HWND, x, y, width, height int32, repaint bool) bool {
 	ret, _, _ := syscall.Syscall6(moveWindow.Addr(), 6,
@@ -3216,6 +3229,17 @@ func PeekMessage(lpMsg *MSG, hWnd HWND, wMsgFilterMin, wMsgFilterMax, wRemoveMsg
 func PostMessage(hWnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(postMessage.Addr(), 4,
 		uintptr(hWnd),
+		uintptr(msg),
+		wParam,
+		lParam,
+		0,
+		0)
+
+	return ret
+}
+func PostThreadMessage(threadId, msg uint32, wParam, lParam uintptr) uintptr {
+	ret, _, _ := syscall.Syscall6(postThreadMessage.Addr(), 4,
+		uintptr(threadId),
 		uintptr(msg),
 		wParam,
 		lParam,
@@ -3421,6 +3445,15 @@ func SetForegroundWindow(hWnd HWND) bool {
 		0)
 
 	return ret != 0
+}
+
+func SwitchToThisWindow(hWnd HWND, bRestore bool) {
+	syscall.Syscall(switchToThisWindow.Addr(), 2,
+		uintptr(hWnd),
+		1,
+		0)
+
+	return
 }
 
 func SetMenu(hWnd HWND, hMenu HMENU) bool {
