@@ -1964,6 +1964,8 @@ var (
 	intersectRect               *windows.LazyProc
 	keybdEvent                  *windows.LazyProc
 	getWindowText               *windows.LazyProc
+	registerHotKey              *windows.LazyProc
+	unregisterHotKey            *windows.LazyProc
 )
 
 func init() {
@@ -2143,6 +2145,8 @@ func init() {
 	loadKeyboardLayout = libuser32.NewProc("LoadKeyboardLayoutW")
 	keybdEvent = libuser32.NewProc("keybd_event")
 	getWindowText = libuser32.NewProc("GetWindowTextW")
+	registerHotKey = libuser32.NewProc("RegisterHotKey")
+	unregisterHotKey = libuser32.NewProc("UnregisterHotKey")
 }
 
 func AddClipboardFormatListener(hwnd HWND) bool {
@@ -3738,5 +3742,48 @@ func SetWindowText(hWnd HWND, text string) bool {
 		uintptr(unsafe.Pointer(lp)),
 		0)
 
+	return ret != 0
+}
+func KeyBdEvent(key, scan byte, flag DWORD, info uintptr) {
+	syscall.Syscall6(keybdEvent.Addr(), 4,
+		uintptr(key),
+		uintptr(scan),
+		uintptr(flag),
+		info, 0, 0)
+	return
+}
+func GetWindowText(hWnd HWND) string {
+	name := make([]uint16, MAX_PATH)
+	ret, _, _ := syscall.Syscall(getWindowText.Addr(), 3,
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(&name[0])),
+		uintptr(MAX_PATH))
+	if ret > 0 {
+		name = name[:ret]
+		return UTF16PtrToString(&name[0])
+	}
+	return ""
+}
+
+const (
+	MOD_ALT      = 0x0001
+	MOD_CONTROL  = 0x0002
+	MOD_SHIFT    = 0x0004
+	MOD_WIN      = 0x0008
+	MOD_NOREPEAT = 0x4000
+)
+
+func RegisterHotKey(hWnd HWND, id int32, fsModifiers uint32, vk uint32) bool {
+	ret, _, _ := syscall.Syscall6(registerHotKey.Addr(), 4,
+		uintptr(hWnd),
+		uintptr(id),
+		uintptr(fsModifiers), uintptr(vk), 0, 0)
+	return ret != 0
+}
+func UnregisterHotKey(hWnd HWND, id int32) bool {
+	ret, _, _ := syscall.Syscall(unregisterHotKey.Addr(), 2,
+		uintptr(hWnd),
+		uintptr(id),
+		0)
 	return ret != 0
 }
