@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
 
 import (
+	"errors"
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
 	"syscall"
 	"unsafe"
 )
@@ -24,7 +27,13 @@ const (
 	HKEY_CURRENT_CONFIG   HKEY = 0x80000005
 	HKEY_DYN_DATA         HKEY = 0x80000006
 )
-
+const (
+	LOGON_WITH_PROFILE        = 1
+	LOGON_NETCREDENTIALS_ONLY = 2
+)
+const (
+	DISABLE_MAX_PRIVILEGE = 1
+)
 const (
 	ERROR_NO_MORE_ITEMS = 259
 
@@ -43,14 +52,14 @@ const (
 	REG_SZ               = 1 // Unicode nul terminated string
 	REG_EXPAND_SZ        = 2 // Unicode nul terminated string
 	// (with environment variable references)
-	REG_BINARY                     = 3  // Free form binary
-	REG_DWORD                      = 4  // 32-bit number
-	REG_DWORD_LITTLE_ENDIAN        = 4  // 32-bit number (same as REG_DWORD)
-	REG_DWORD_BIG_ENDIAN           = 5  // 32-bit number
-	REG_LINK                       = 6  // Symbolic Link (unicode)
-	REG_MULTI_SZ                   = 7  // Multiple Unicode strings
-	REG_RESOURCE_LIST              = 8  // Resource list in the resource map
-	REG_FULL_RESOURCE_DESCRIPTOR   = 9  // Resource list in the hardware description
+	REG_BINARY                     = 3 // Free form binary
+	REG_DWORD                      = 4 // 32-bit number
+	REG_DWORD_LITTLE_ENDIAN        = 4 // 32-bit number (same as REG_DWORD)
+	REG_DWORD_BIG_ENDIAN           = 5 // 32-bit number
+	REG_LINK                       = 6 // Symbolic Link (unicode)
+	REG_MULTI_SZ                   = 7 // Multiple Unicode strings
+	REG_RESOURCE_LIST              = 8 // Resource list in the resource map
+	REG_FULL_RESOURCE_DESCRIPTOR   = 9 // Resource list in the hardware description
 	REG_RESOURCE_REQUIREMENTS_LIST = 10
 	REG_QWORD                      = 11 // 64-bit number
 	REG_QWORD_LITTLE_ENDIAN        = 11 // 64-bit number (same as REG_QWORD)
@@ -62,12 +71,17 @@ var (
 	libadvapi32 *windows.LazyDLL
 
 	// Functions
-	regCloseKey         *windows.LazyProc
-	regOpenKeyEx        *windows.LazyProc
-	regQueryValueEx     *windows.LazyProc
-	regEnumValue        *windows.LazyProc
-	regSetValueEx       *windows.LazyProc
-	createProcessAsUser *windows.LazyProc
+	regCloseKey             *windows.LazyProc
+	regOpenKeyEx            *windows.LazyProc
+	regQueryValueEx         *windows.LazyProc
+	regEnumValue            *windows.LazyProc
+	regSetValueEx           *windows.LazyProc
+	createProcessAsUser     *windows.LazyProc
+	createProcessWithToken  *windows.LazyProc
+	createRestrictedToken   *windows.LazyProc
+	impersonateLoggedOnUser *windows.LazyProc
+	regDisableReflectionKey *windows.LazyProc
+	regDeleteKeyEx          *windows.LazyProc
 )
 
 func init() {
@@ -81,6 +95,11 @@ func init() {
 	regEnumValue = libadvapi32.NewProc("RegEnumValueW")
 	regSetValueEx = libadvapi32.NewProc("RegSetValueExW")
 	createProcessAsUser = libadvapi32.NewProc("CreateProcessAsUserW")
+	createProcessWithToken = libadvapi32.NewProc("CreateProcessWithTokenW")
+	createRestrictedToken = libadvapi32.NewProc("CreateRestrictedToken")
+	impersonateLoggedOnUser = libadvapi32.NewProc("ImpersonateLoggedOnUser")
+	regDisableReflectionKey = libadvapi32.NewProc("RegDisableReflectionKey")
+	regDeleteKeyEx = libadvapi32.NewProc("RegDeleteKeyExW")
 }
 
 func RegCloseKey(hKey HKEY) int32 {
@@ -140,33 +159,103 @@ func RegSetValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpDataType uint64
 		uintptr(cbData))
 	return int32(ret)
 }
+func RegDisableReflectionKey(hKey registry.Key) int32 {
+	ret, _, _ := syscall.Syscall(regDisableReflectionKey.Addr(), 1,
+		uintptr(hKey),
+		0, 0)
+	return int32(ret)
+}
 
-func CreateProcessAsUser(token windows.Token, appName, cmdLine string, pAttr, tAttr uintptr, inherit bool, flags int,
-	env *uint16, curDir string, sInfo *windows.StartupInfo) (windows.ProcessInformation, bool) {
+func RegDeleteKeyEx(hKey registry.Key, path string, desired uint32) error {
+	ret, _, _ := syscall.Syscall6(regDeleteKeyEx.Addr(), 4, uintptr(hKey),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path))),
+		uintptr(desired), 0, 0, 0)
+	if ret != 0 {
+		return syscall.Errno(ret)
+	}
+	return nil
+}
+
+func CreateRestrictedToken(token windows.Token, flags int, disables, restricted []windows.SIDAndAttributes, delete []windows.LUIDAndAttributes) (windows.Token, error) {
+	var ds, rs, de uintptr
+	if len(disables) > 0 {
+		ds = uintptr(unsafe.Pointer(&disables[0]))
+	}
+	if len(restricted) > 0 {
+		rs = uintptr(unsafe.Pointer(&restricted[0]))
+	}
+	if len(delete) > 0 {
+		de = uintptr(unsafe.Pointer(&delete[0]))
+	}
+	var pInfo windows.Token
+	ret, _, err := syscall.Syscall9(createRestrictedToken.Addr(), 9, uintptr(token), uintptr(flags), uintptr(len(disables)), ds,
+		uintptr(len(delete)), de, uintptr(len(restricted)), rs, uintptr(unsafe.Pointer(&pInfo)))
+	if ret == 0 {
+		return pInfo, errors.New("Syscall9:" + err.Error())
+	}
+	return pInfo, nil
+
+}
+func CreateProcessWithToken(token windows.Token, logonFlags int, appName, cmdLine, curDir string, flags int, env *uint16, sInfo *windows.StartupInfo) (windows.ProcessInformation, error) {
 	var pInfo windows.ProcessInformation
 	an, err := syscall.UTF16PtrFromString(appName)
 	if err != nil {
-		return pInfo, false
+		return pInfo, errors.New("UTF16PtrFromString1:" + err.Error())
 	}
 	var cl, cd *uint16
 	if len(cmdLine) > 0 {
 		cl, err = syscall.UTF16PtrFromString(cmdLine)
 		if err != nil {
-			return pInfo, false
+			return pInfo, errors.New("UTF16PtrFromString2:" + err.Error())
 		}
 	}
 	if len(curDir) > 0 {
 		cd, err = syscall.UTF16PtrFromString(curDir)
 		if err != nil {
-			return pInfo, false
+			return pInfo, errors.New("UTF16PtrFromString3:" + err.Error())
 		}
 	}
-	ret, _, _ := syscall.Syscall12(createProcessAsUser.Addr(), 11, uintptr(token), uintptr(unsafe.Pointer(an)), uintptr(unsafe.Pointer(cl)), pAttr, tAttr,
+	ret, _, err := syscall.Syscall9(createProcessWithToken.Addr(), 9, uintptr(token), uintptr(logonFlags), uintptr(unsafe.Pointer(an)), uintptr(unsafe.Pointer(cl)),
+		uintptr(flags), uintptr(unsafe.Pointer(env)), uintptr(unsafe.Pointer(cd)), uintptr(unsafe.Pointer(sInfo)), uintptr(unsafe.Pointer(&pInfo)))
+	if ret == 0 {
+		return pInfo, errors.New("Syscall9:" + err.Error())
+	}
+	return pInfo, nil
+
+}
+func CreateProcessAsUser(token windows.Token, appName, cmdLine string, pAttr, tAttr uintptr, inherit bool, flags int,
+	env *uint16, curDir string, sInfo *windows.StartupInfo) (windows.ProcessInformation, error) {
+	var pInfo windows.ProcessInformation
+	an, err := syscall.UTF16PtrFromString(appName)
+	if err != nil {
+		return pInfo, errors.New("UTF16PtrFromString1:" + err.Error())
+	}
+	var cl, cd *uint16
+	if len(cmdLine) > 0 {
+		cl, err = syscall.UTF16PtrFromString(cmdLine)
+		if err != nil {
+			return pInfo, errors.New("UTF16PtrFromString2:" + err.Error())
+		}
+	}
+	if len(curDir) > 0 {
+		cd, err = syscall.UTF16PtrFromString(curDir)
+		if err != nil {
+			return pInfo, errors.New("UTF16PtrFromString3:" + err.Error())
+		}
+	}
+	ret, _, err := syscall.Syscall12(createProcessAsUser.Addr(), 11, uintptr(token), uintptr(unsafe.Pointer(an)), uintptr(unsafe.Pointer(cl)), pAttr, tAttr,
 		uintptr(BoolToBOOL(inherit)),
 		uintptr(flags),
 		uintptr(unsafe.Pointer(env)),
 		uintptr(unsafe.Pointer(cd)),
 		uintptr(unsafe.Pointer(sInfo)),
 		uintptr(unsafe.Pointer(&pInfo)), 0)
-	return pInfo, int32(ret) == TRUE
+	if ret == 0 {
+		return pInfo, errors.New("Syscall12:" + err.Error())
+	}
+	return pInfo, nil
+}
+func ImpersonateLoggedOnUser(token windows.Token) bool {
+	ret, _, _ := syscall.Syscall(impersonateLoggedOnUser.Addr(), 1, uintptr(token), 0, 0)
+	return ret != 0
 }

@@ -1820,6 +1820,7 @@ var (
 	createIconIndirect          *windows.LazyProc
 	createMenu                  *windows.LazyProc
 	createPopupMenu             *windows.LazyProc
+	appendMenu                  *windows.LazyProc
 	createWindowEx              *windows.LazyProc
 	deferWindowPos              *windows.LazyProc
 	defWindowProc               *windows.LazyProc
@@ -1991,6 +1992,7 @@ func init() {
 	createIconIndirect = libuser32.NewProc("CreateIconIndirect")
 	createMenu = libuser32.NewProc("CreateMenu")
 	createPopupMenu = libuser32.NewProc("CreatePopupMenu")
+	appendMenu = libuser32.NewProc("AppendMenuW")
 	createWindowEx = libuser32.NewProc("CreateWindowExW")
 	deferWindowPos = libuser32.NewProc("DeferWindowPos")
 	defWindowProc = libuser32.NewProc("DefWindowProcW")
@@ -2174,7 +2176,7 @@ func GetKeyboardLayoutList(count int) []HKL {
 }
 
 func LoadKeyboardLayout(name string, flags uint) HKL {
-	ret, _, _ := loadKeyboardLayout.Call(uintptr(unsafe.Pointer(windows.StringToUTF16Ptr(name))), uintptr(flags))
+	ret, _, _ := loadKeyboardLayout.Call(String2UIntPtr(name), uintptr(flags))
 	return HKL(ret)
 }
 
@@ -2346,8 +2348,12 @@ func CreatePopupMenu() HMENU {
 		0,
 		0,
 		0)
-
 	return HMENU(ret)
+}
+
+func AppendMenu(hMenu HMENU, flags, uId UINT, lp uintptr) (bool, error) {
+	ret, _, err := syscall.SyscallN(appendMenu.Addr(), uintptr(hMenu), uintptr(flags), uintptr(uId), lp)
+	return ret != 0, err
 }
 
 func CreateWindowEx(dwExStyle uint32, lpClassName, lpWindowName *uint16, dwStyle uint32, x, y, nWidth, nHeight int32, hWndParent HWND, hMenu HMENU, hInstance HINSTANCE, lpParam unsafe.Pointer) HWND {
@@ -3136,7 +3142,7 @@ func LoadString(instRes HINSTANCE, id uint32, buf *uint16, length int32) int32 {
 //	MB_ICONHAND (See MB_ICONERROR)
 //	MB_ICONINFORMATION (The sounds specified as the Windows Asterisk sound)
 //	MB_ICONQUESTION (The sound specified as the Windows Question sound)
-// 	MB_ICONSTOP (See MB_ICONERROR)
+//	MB_ICONSTOP (See MB_ICONERROR)
 //	MB_ICONWARNING (The sounds specified as the Windows Exclamation sound)
 //	MB_OK (The sound specified as the Windows Default Beep sound)
 //
