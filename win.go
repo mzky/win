@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
@@ -84,4 +85,7 @@ func BoolToBOOL(value bool) BOOL {
 	}
 
 	return 0
+}
+func String2UIntPtr(s string) uintptr {
+	return uintptr(unsafe.Pointer(windows.StringToUTF16Ptr(s)))
 }

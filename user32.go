@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
@@ -200,17 +201,17 @@ const (
 	BS_AUTOCHECKBOX    = 3
 	BS_AUTORADIOBUTTON = 9
 	BS_BITMAP          = 128
-	BS_BOTTOM          = 0X800
-	BS_CENTER          = 0X300
+	BS_BOTTOM          = 0x800
+	BS_CENTER          = 0x300
 	BS_CHECKBOX        = 2
 	BS_DEFPUSHBUTTON   = 1
 	BS_GROUPBOX        = 7
 	BS_ICON            = 64
 	BS_LEFT            = 256
 	BS_LEFTTEXT        = 32
-	BS_MULTILINE       = 0X2000
-	BS_NOTIFY          = 0X4000
-	BS_OWNERDRAW       = 0XB
+	BS_MULTILINE       = 0x2000
+	BS_NOTIFY          = 0x4000
+	BS_OWNERDRAW       = 0xB
 	BS_PUSHBUTTON      = 0
 	BS_PUSHLIKE        = 4096
 	BS_RADIOBUTTON     = 4
@@ -218,10 +219,10 @@ const (
 	BS_RIGHTBUTTON     = 32
 	BS_SPLITBUTTON     = 0x0000000c
 	BS_TEXT            = 0
-	BS_TOP             = 0X400
+	BS_TOP             = 0x400
 	BS_USERBUTTON      = 8
-	BS_VCENTER         = 0XC00
-	BS_FLAT            = 0X8000
+	BS_VCENTER         = 0xC00
+	BS_FLAT            = 0x8000
 )
 
 const (
@@ -638,29 +639,29 @@ const (
 
 // Window style constants
 const (
-	WS_OVERLAPPED       = 0X00000000
-	WS_POPUP            = 0X80000000
-	WS_CHILD            = 0X40000000
-	WS_MINIMIZE         = 0X20000000
-	WS_VISIBLE          = 0X10000000
-	WS_DISABLED         = 0X08000000
-	WS_CLIPSIBLINGS     = 0X04000000
-	WS_CLIPCHILDREN     = 0X02000000
-	WS_MAXIMIZE         = 0X01000000
-	WS_CAPTION          = 0X00C00000
-	WS_BORDER           = 0X00800000
-	WS_DLGFRAME         = 0X00400000
-	WS_VSCROLL          = 0X00200000
-	WS_HSCROLL          = 0X00100000
-	WS_SYSMENU          = 0X00080000
-	WS_THICKFRAME       = 0X00040000
-	WS_GROUP            = 0X00020000
-	WS_TABSTOP          = 0X00010000
-	WS_MINIMIZEBOX      = 0X00020000
-	WS_MAXIMIZEBOX      = 0X00010000
-	WS_TILED            = 0X00000000
-	WS_ICONIC           = 0X20000000
-	WS_SIZEBOX          = 0X00040000
+	WS_OVERLAPPED       = 0x00000000
+	WS_POPUP            = 0x80000000
+	WS_CHILD            = 0x40000000
+	WS_MINIMIZE         = 0x20000000
+	WS_VISIBLE          = 0x10000000
+	WS_DISABLED         = 0x08000000
+	WS_CLIPSIBLINGS     = 0x04000000
+	WS_CLIPCHILDREN     = 0x02000000
+	WS_MAXIMIZE         = 0x01000000
+	WS_CAPTION          = 0x00C00000
+	WS_BORDER           = 0x00800000
+	WS_DLGFRAME         = 0x00400000
+	WS_VSCROLL          = 0x00200000
+	WS_HSCROLL          = 0x00100000
+	WS_SYSMENU          = 0x00080000
+	WS_THICKFRAME       = 0x00040000
+	WS_GROUP            = 0x00020000
+	WS_TABSTOP          = 0x00010000
+	WS_MINIMIZEBOX      = 0x00020000
+	WS_MAXIMIZEBOX      = 0x00010000
+	WS_TILED            = 0x00000000
+	WS_ICONIC           = 0x20000000
+	WS_SIZEBOX          = 0x00040000
 	WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
 	WS_POPUPWINDOW      = WS_POPUP | WS_BORDER | WS_SYSMENU
 	WS_CHILDWINDOW      = WS_CHILD
@@ -668,32 +669,32 @@ const (
 
 // Extended window style constants
 const (
-	WS_EX_DLGMODALFRAME    = 0X00000001
-	WS_EX_NOPARENTNOTIFY   = 0X00000004
-	WS_EX_TOPMOST          = 0X00000008
-	WS_EX_ACCEPTFILES      = 0X00000010
-	WS_EX_TRANSPARENT      = 0X00000020
-	WS_EX_MDICHILD         = 0X00000040
-	WS_EX_TOOLWINDOW       = 0X00000080
-	WS_EX_WINDOWEDGE       = 0X00000100
-	WS_EX_CLIENTEDGE       = 0X00000200
-	WS_EX_CONTEXTHELP      = 0X00000400
-	WS_EX_RIGHT            = 0X00001000
-	WS_EX_LEFT             = 0X00000000
-	WS_EX_RTLREADING       = 0X00002000
-	WS_EX_LTRREADING       = 0X00000000
-	WS_EX_LEFTSCROLLBAR    = 0X00004000
-	WS_EX_RIGHTSCROLLBAR   = 0X00000000
-	WS_EX_CONTROLPARENT    = 0X00010000
-	WS_EX_STATICEDGE       = 0X00020000
-	WS_EX_APPWINDOW        = 0X00040000
-	WS_EX_OVERLAPPEDWINDOW = 0X00000100 | 0X00000200
-	WS_EX_PALETTEWINDOW    = 0X00000100 | 0X00000080 | 0X00000008
-	WS_EX_LAYERED          = 0X00080000
-	WS_EX_NOINHERITLAYOUT  = 0X00100000
-	WS_EX_LAYOUTRTL        = 0X00400000
-	WS_EX_COMPOSITED       = 0X02000000
-	WS_EX_NOACTIVATE       = 0X08000000
+	WS_EX_DLGMODALFRAME    = 0x00000001
+	WS_EX_NOPARENTNOTIFY   = 0x00000004
+	WS_EX_TOPMOST          = 0x00000008
+	WS_EX_ACCEPTFILES      = 0x00000010
+	WS_EX_TRANSPARENT      = 0x00000020
+	WS_EX_MDICHILD         = 0x00000040
+	WS_EX_TOOLWINDOW       = 0x00000080
+	WS_EX_WINDOWEDGE       = 0x00000100
+	WS_EX_CLIENTEDGE       = 0x00000200
+	WS_EX_CONTEXTHELP      = 0x00000400
+	WS_EX_RIGHT            = 0x00001000
+	WS_EX_LEFT             = 0x00000000
+	WS_EX_RTLREADING       = 0x00002000
+	WS_EX_LTRREADING       = 0x00000000
+	WS_EX_LEFTSCROLLBAR    = 0x00004000
+	WS_EX_RIGHTSCROLLBAR   = 0x00000000
+	WS_EX_CONTROLPARENT    = 0x00010000
+	WS_EX_STATICEDGE       = 0x00020000
+	WS_EX_APPWINDOW        = 0x00040000
+	WS_EX_OVERLAPPEDWINDOW = 0x00000100 | 0x00000200
+	WS_EX_PALETTEWINDOW    = 0x00000100 | 0x00000080 | 0x00000008
+	WS_EX_LAYERED          = 0x00080000
+	WS_EX_NOINHERITLAYOUT  = 0x00100000
+	WS_EX_LAYOUTRTL        = 0x00400000
+	WS_EX_COMPOSITED       = 0x02000000
+	WS_EX_NOACTIVATE       = 0x08000000
 )
 
 // Window message constants
@@ -767,7 +768,7 @@ const (
 	WM_INITMENU               = 278
 	WM_IME_STARTCOMPOSITION   = 269
 	WM_INITMENUPOPUP          = 279
-	WM_INPUT                  = 0X00FF
+	WM_INPUT                  = 0x00FF
 	WM_INPUTLANGCHANGE        = 81
 	WM_INPUTLANGCHANGEREQUEST = 80
 	WM_KEYDOWN                = 256
@@ -786,16 +787,16 @@ const (
 	WM_MDISETMENU             = 560
 	WM_MDITILE                = 550
 	WM_MEASUREITEM            = 44
-	WM_GETOBJECT              = 0X003D
-	WM_CHANGEUISTATE          = 0X0127
-	WM_UPDATEUISTATE          = 0X0128
-	WM_QUERYUISTATE           = 0X0129
-	WM_UNINITMENUPOPUP        = 0X0125
+	WM_GETOBJECT              = 0x003D
+	WM_CHANGEUISTATE          = 0x0127
+	WM_UPDATEUISTATE          = 0x0128
+	WM_QUERYUISTATE           = 0x0129
+	WM_UNINITMENUPOPUP        = 0x0125
 	WM_MENURBUTTONUP          = 290
-	WM_MENUCOMMAND            = 0X0126
-	WM_MENUGETOBJECT          = 0X0124
-	WM_MENUDRAG               = 0X0123
-	WM_APPCOMMAND             = 0X0319
+	WM_MENUCOMMAND            = 0x0126
+	WM_MENUGETOBJECT          = 0x0124
+	WM_MENUDRAG               = 0x0123
+	WM_APPCOMMAND             = 0x0319
 	WM_MENUCHAR               = 288
 	WM_MENUSELECT             = 287
 	WM_MOVE                   = 3
@@ -814,8 +815,8 @@ const (
 	WM_NCXBUTTONDOWN          = 171
 	WM_NCXBUTTONUP            = 172
 	WM_NCXBUTTONDBLCLK        = 173
-	WM_NCMOUSEHOVER           = 0X02A0
-	WM_NCMOUSELEAVE           = 0X02A2
+	WM_NCMOUSEHOVER           = 0x02A0
+	WM_NCMOUSELEAVE           = 0x02A2
 	WM_NCMOUSEMOVE            = 160
 	WM_NCPAINT                = 133
 	WM_NCRBUTTONDBLCLK        = 166
@@ -901,8 +902,8 @@ const (
 	WM_XBUTTONUP              = 524
 	WM_XBUTTONDBLCLK          = 525
 	WM_MOUSELAST              = 525
-	WM_MOUSEHOVER             = 0X2A1
-	WM_MOUSELEAVE             = 0X2A3
+	WM_MOUSEHOVER             = 0x2A1
+	WM_MOUSELEAVE             = 0x2A3
 	WM_CLIPBOARDUPDATE        = 0x031D
 	WM_UNICHAR                = 0x0109
 )
@@ -1496,6 +1497,8 @@ const (
 	KLF_SHIFTLOCK     uint = 0x00010000
 )
 
+type DWORD uint32
+type UINT uint32
 type NMBCDROPDOWN struct {
 	Hdr      NMHDR
 	RcButton RECT
@@ -1817,6 +1820,7 @@ var (
 	createIconIndirect          *windows.LazyProc
 	createMenu                  *windows.LazyProc
 	createPopupMenu             *windows.LazyProc
+	appendMenu                  *windows.LazyProc
 	createWindowEx              *windows.LazyProc
 	deferWindowPos              *windows.LazyProc
 	defWindowProc               *windows.LazyProc
@@ -1836,6 +1840,8 @@ var (
 	endDeferWindowPos           *windows.LazyProc
 	endDialog                   *windows.LazyProc
 	endPaint                    *windows.LazyProc
+	enumWindows                 *windows.LazyProc
+	enumThreadWindows           *windows.LazyProc
 	enumChildWindows            *windows.LazyProc
 	findWindow                  *windows.LazyProc
 	getActiveWindow             *windows.LazyProc
@@ -1871,6 +1877,7 @@ var (
 	getSystemMetrics            *windows.LazyProc
 	getSystemMetricsForDpi      *windows.LazyProc
 	getWindow                   *windows.LazyProc
+	getWindowInfo               *windows.LazyProc
 	getWindowLong               *windows.LazyProc
 	getWindowLongPtr            *windows.LazyProc
 	getWindowPlacement          *windows.LazyProc
@@ -1897,15 +1904,18 @@ var (
 	getKeyboardLayoutList       *windows.LazyProc
 	activateKeyboardLayout      *windows.LazyProc
 	getKeyboardLayoutName       *windows.LazyProc
+	getKeyboardLayout           *windows.LazyProc
 	loadKeyboardLayout          *windows.LazyProc
 	messageBox                  *windows.LazyProc
 	monitorFromWindow           *windows.LazyProc
+	monitorFromPoint            *windows.LazyProc
 	moveWindow                  *windows.LazyProc
 	notifyWinEvent              *windows.LazyProc
 	unregisterClass             *windows.LazyProc
 	openClipboard               *windows.LazyProc
 	peekMessage                 *windows.LazyProc
 	postMessage                 *windows.LazyProc
+	postThreadMessage           *windows.LazyProc
 	postQuitMessage             *windows.LazyProc
 	redrawWindow                *windows.LazyProc
 	registerClassEx             *windows.LazyProc
@@ -1925,6 +1935,7 @@ var (
 	setCursorPos                *windows.LazyProc
 	setFocus                    *windows.LazyProc
 	setForegroundWindow         *windows.LazyProc
+	switchToThisWindow          *windows.LazyProc
 	setMenu                     *windows.LazyProc
 	setMenuDefaultItem          *windows.LazyProc
 	setMenuInfo                 *windows.LazyProc
@@ -1952,6 +1963,10 @@ var (
 	windowFromDC                *windows.LazyProc
 	windowFromPoint             *windows.LazyProc
 	intersectRect               *windows.LazyProc
+	keybdEvent                  *windows.LazyProc
+	getWindowText               *windows.LazyProc
+	registerHotKey              *windows.LazyProc
+	unregisterHotKey            *windows.LazyProc
 )
 
 func init() {
@@ -1977,6 +1992,7 @@ func init() {
 	createIconIndirect = libuser32.NewProc("CreateIconIndirect")
 	createMenu = libuser32.NewProc("CreateMenu")
 	createPopupMenu = libuser32.NewProc("CreatePopupMenu")
+	appendMenu = libuser32.NewProc("AppendMenuW")
 	createWindowEx = libuser32.NewProc("CreateWindowExW")
 	deferWindowPos = libuser32.NewProc("DeferWindowPos")
 	defWindowProc = libuser32.NewProc("DefWindowProcW")
@@ -1997,6 +2013,8 @@ func init() {
 	endDialog = libuser32.NewProc("EndDialog")
 	endPaint = libuser32.NewProc("EndPaint")
 	intersectRect = libuser32.NewProc("IntersectRect")
+	enumWindows = libuser32.NewProc("EnumWindows")
+	enumThreadWindows = libuser32.NewProc("EnumThreadWindows")
 	enumChildWindows = libuser32.NewProc("EnumChildWindows")
 	findWindow = libuser32.NewProc("FindWindowW")
 	getActiveWindow = libuser32.NewProc("GetActiveWindow")
@@ -2032,6 +2050,7 @@ func init() {
 	getSystemMetrics = libuser32.NewProc("GetSystemMetrics")
 	getSystemMetricsForDpi = libuser32.NewProc("GetSystemMetricsForDpi")
 	getWindow = libuser32.NewProc("GetWindow")
+	getWindowInfo = libuser32.NewProc("GetWindowInfo")
 	getWindowLong = libuser32.NewProc("GetWindowLongW")
 	// On 32 bit GetWindowLongPtrW is not available
 	if is64bit {
@@ -2061,12 +2080,14 @@ func init() {
 	messageBeep = libuser32.NewProc("MessageBeep")
 	messageBox = libuser32.NewProc("MessageBoxW")
 	monitorFromWindow = libuser32.NewProc("MonitorFromWindow")
+	monitorFromPoint = libuser32.NewProc("MonitorFromPoint")
 	moveWindow = libuser32.NewProc("MoveWindow")
 	notifyWinEvent = libuser32.NewProc("NotifyWinEvent")
 	unregisterClass = libuser32.NewProc("UnregisterClassW")
 	openClipboard = libuser32.NewProc("OpenClipboard")
 	peekMessage = libuser32.NewProc("PeekMessageW")
 	postMessage = libuser32.NewProc("PostMessageW")
+	postThreadMessage = libuser32.NewProc("PostThreadMessageW")
 	postQuitMessage = libuser32.NewProc("PostQuitMessage")
 	redrawWindow = libuser32.NewProc("RedrawWindow")
 	registerClassEx = libuser32.NewProc("RegisterClassExW")
@@ -2086,6 +2107,7 @@ func init() {
 	setCursorPos = libuser32.NewProc("SetCursorPos")
 	setFocus = libuser32.NewProc("SetFocus")
 	setForegroundWindow = libuser32.NewProc("SetForegroundWindow")
+	switchToThisWindow = libuser32.NewProc("SwitchToThisWindow")
 	setMenu = libuser32.NewProc("SetMenu")
 	setMenuDefaultItem = libuser32.NewProc("SetMenuDefaultItem")
 	setMenuInfo = libuser32.NewProc("SetMenuInfo")
@@ -2121,7 +2143,12 @@ func init() {
 	getKeyboardLayoutList = libuser32.NewProc("GetKeyboardLayoutList")
 	activateKeyboardLayout = libuser32.NewProc("ActivateKeyboardLayout")
 	getKeyboardLayoutName = libuser32.NewProc("GetKeyboardLayoutNameW")
+	getKeyboardLayout = libuser32.NewProc("GetKeyboardLayout")
 	loadKeyboardLayout = libuser32.NewProc("LoadKeyboardLayoutW")
+	keybdEvent = libuser32.NewProc("keybd_event")
+	getWindowText = libuser32.NewProc("GetWindowTextW")
+	registerHotKey = libuser32.NewProc("RegisterHotKey")
+	unregisterHotKey = libuser32.NewProc("UnregisterHotKey")
 }
 
 func AddClipboardFormatListener(hwnd HWND) bool {
@@ -2149,7 +2176,7 @@ func GetKeyboardLayoutList(count int) []HKL {
 }
 
 func LoadKeyboardLayout(name string, flags uint) HKL {
-	ret, _, _ := loadKeyboardLayout.Call(uintptr(unsafe.Pointer(windows.StringToUTF16Ptr(name))), uintptr(flags))
+	ret, _, _ := loadKeyboardLayout.Call(String2UIntPtr(name), uintptr(flags))
 	return HKL(ret)
 }
 
@@ -2164,6 +2191,10 @@ func GetKeyboardLayoutName() string {
 		return string(utf16.Decode(str))
 	}
 	return ""
+}
+func GetKeyboardLayout(idThread uint32) HKL {
+	ret, _, _ := getKeyboardLayout.Call(uintptr(idThread))
+	return HKL(ret)
 }
 
 func AdjustWindowRect(lpRect *RECT, dwStyle uint32, bMenu bool) bool {
@@ -2317,8 +2348,12 @@ func CreatePopupMenu() HMENU {
 		0,
 		0,
 		0)
-
 	return HMENU(ret)
+}
+
+func AppendMenu(hMenu HMENU, flags, uId UINT, lp uintptr) (bool, error) {
+	ret, _, err := syscall.SyscallN(appendMenu.Addr(), uintptr(hMenu), uintptr(flags), uintptr(uId), lp)
+	return ret != 0, err
 }
 
 func CreateWindowEx(dwExStyle uint32, lpClassName, lpWindowName *uint16, dwStyle uint32, x, y, nWidth, nHeight int32, hWndParent HWND, hMenu HMENU, hInstance HINSTANCE, lpParam unsafe.Pointer) HWND {
@@ -2522,10 +2557,27 @@ func EndPaint(hwnd HWND, lpPaint *PAINTSTRUCT) bool {
 	return ret != 0
 }
 
-func EnumChildWindows(hWndParent HWND, lpEnumFunc, lParam uintptr) bool {
+type EnumWindowsProc func(hWnd HWND, lParam uintptr) uintptr
+
+func EnumChildWindows(hWndParent HWND, lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
 	ret, _, _ := syscall.Syscall(enumChildWindows.Addr(), 3,
 		uintptr(hWndParent),
-		lpEnumFunc,
+		syscall.NewCallbackCDecl(lpEnumFunc),
+		lParam)
+
+	return ret != 0
+}
+func EnumWindows(lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
+	ret, _, _ := syscall.Syscall(enumWindows.Addr(), 2,
+		syscall.NewCallbackCDecl(lpEnumFunc),
+		lParam, 0)
+
+	return ret != 0
+}
+
+func EnumThreadWindows(threadId uint32, lpEnumFunc EnumWindowsProc, lParam uintptr) bool {
+	ret, _, _ := syscall.Syscall(enumThreadWindows.Addr(), 3, uintptr(threadId),
+		syscall.NewCallbackCDecl(lpEnumFunc),
 		lParam)
 
 	return ret != 0
@@ -2558,24 +2610,27 @@ func GetAncestor(hWnd HWND, gaFlags uint32) HWND {
 	return HWND(ret)
 }
 
-func GetCaretPos(lpPoint *POINT) bool {
+func GetCaretPos() (POINT, bool) {
+	var p POINT
 	ret, _, _ := syscall.Syscall(getCaretPos.Addr(), 1,
-		uintptr(unsafe.Pointer(lpPoint)),
+		uintptr(unsafe.Pointer(&p)),
 		0,
 		0)
 
-	return ret != 0
+	return p, ret != 0
 }
 
-func GetClassName(hWnd HWND, className *uint16, maxCount int) (int, error) {
+func GetClassName(hWnd HWND) (string, error) {
+	className := make([]uint16, MAX_PATH)
 	ret, _, e := syscall.Syscall(getClassName.Addr(), 3,
 		uintptr(hWnd),
-		uintptr(unsafe.Pointer(className)),
-		uintptr(maxCount))
+		uintptr(unsafe.Pointer(&className[0])),
+		uintptr(MAX_PATH))
 	if ret == 0 {
-		return 0, e
+		return "", e
 	}
-	return int(ret), nil
+	className[int(ret)] = 0
+	return windows.UTF16PtrToString(&(className[0])), nil
 }
 
 func GetClientRect(hWnd HWND, rect *RECT) bool {
@@ -2865,6 +2920,29 @@ func GetWindow(hWnd HWND, uCmd uint32) HWND {
 	return HWND(ret)
 }
 
+type WindowInfo struct {
+	cbSize          DWORD //DWORD
+	rcWindow        RECT  //RECT
+	rcClient        RECT  //RECT
+	dwStyle         DWORD //DWORD
+	dwExStyle       DWORD //DWORD
+	dwWindowStatus  DWORD //DWORD
+	cxWindowBorders UINT  //UINT
+	cyWindowBorders UINT  //UINT
+	atomWindowType  ATOM  //ATOM
+	wCreatorVersion DWORD //WORD
+}
+
+func GetWindowInfo(hWnd HWND) (WindowInfo, bool) {
+	var info WindowInfo
+	ret, _, _ := syscall.Syscall(getWindow.Addr(), 2,
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(&info)),
+		0)
+
+	return info, ret == TRUE
+}
+
 func GetWindowLong(hWnd HWND, index int32) int32 {
 	ret, _, _ := syscall.Syscall(getWindowLong.Addr(), 2,
 		uintptr(hWnd),
@@ -2892,13 +2970,14 @@ func GetWindowPlacement(hWnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
 	return ret != 0
 }
 
-func GetWindowRect(hWnd HWND, rect *RECT) bool {
+func GetWindowRect(hWnd HWND) (RECT, bool) {
+	var rect RECT
 	ret, _, _ := syscall.Syscall(getWindowRect.Addr(), 2,
 		uintptr(hWnd),
-		uintptr(unsafe.Pointer(rect)),
+		uintptr(unsafe.Pointer(&rect)),
 		0)
 
-	return ret != 0
+	return rect, ret != 0
 }
 
 func InsertMenuItem(hMenu HMENU, uItem uint32, fByPosition bool, lpmii *MENUITEMINFO) bool {
@@ -3063,7 +3142,7 @@ func LoadString(instRes HINSTANCE, id uint32, buf *uint16, length int32) int32 {
 //	MB_ICONHAND (See MB_ICONERROR)
 //	MB_ICONINFORMATION (The sounds specified as the Windows Asterisk sound)
 //	MB_ICONQUESTION (The sound specified as the Windows Question sound)
-// 	MB_ICONSTOP (See MB_ICONERROR)
+//	MB_ICONSTOP (See MB_ICONERROR)
 //	MB_ICONWARNING (The sounds specified as the Windows Exclamation sound)
 //	MB_OK (The sound specified as the Windows Default Beep sound)
 //
@@ -3094,6 +3173,13 @@ func MonitorFromWindow(hwnd HWND, dwFlags uint32) HMONITOR {
 		uintptr(hwnd),
 		uintptr(dwFlags),
 		0)
+
+	return HMONITOR(ret)
+}
+func MonitorFromPoint(x, y int32, dwFlags uint32) HMONITOR {
+	ret, _, _ := syscall.Syscall(monitorFromPoint.Addr(), 2,
+		uintptr((uint64(x)&0xFFFFFFFF)|(uint64(y)<<32)),
+		uintptr(dwFlags), 0)
 
 	return HMONITOR(ret)
 }
@@ -3153,6 +3239,17 @@ func PeekMessage(lpMsg *MSG, hWnd HWND, wMsgFilterMin, wMsgFilterMax, wRemoveMsg
 func PostMessage(hWnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(postMessage.Addr(), 4,
 		uintptr(hWnd),
+		uintptr(msg),
+		wParam,
+		lParam,
+		0,
+		0)
+
+	return ret
+}
+func PostThreadMessage(threadId, msg uint32, wParam, lParam uintptr) uintptr {
+	ret, _, _ := syscall.Syscall6(postThreadMessage.Addr(), 4,
+		uintptr(threadId),
 		uintptr(msg),
 		wParam,
 		lParam,
@@ -3358,6 +3455,15 @@ func SetForegroundWindow(hWnd HWND) bool {
 		0)
 
 	return ret != 0
+}
+
+func SwitchToThisWindow(hWnd HWND, bRestore bool) {
+	syscall.Syscall(switchToThisWindow.Addr(), 2,
+		uintptr(hWnd),
+		1,
+		0)
+
+	return
 }
 
 func SetMenu(hWnd HWND, hMenu HMENU) bool {
@@ -3642,5 +3748,48 @@ func SetWindowText(hWnd HWND, text string) bool {
 		uintptr(unsafe.Pointer(lp)),
 		0)
 
+	return ret != 0
+}
+func KeyBdEvent(key, scan byte, flag DWORD, info uintptr) {
+	syscall.Syscall6(keybdEvent.Addr(), 4,
+		uintptr(key),
+		uintptr(scan),
+		uintptr(flag),
+		info, 0, 0)
+	return
+}
+func GetWindowText(hWnd HWND) string {
+	name := make([]uint16, MAX_PATH)
+	ret, _, _ := syscall.Syscall(getWindowText.Addr(), 3,
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(&name[0])),
+		uintptr(MAX_PATH))
+	if ret > 0 {
+		name = name[:ret]
+		return UTF16PtrToString(&name[0])
+	}
+	return ""
+}
+
+const (
+	MOD_ALT      = 0x0001
+	MOD_CONTROL  = 0x0002
+	MOD_SHIFT    = 0x0004
+	MOD_WIN      = 0x0008
+	MOD_NOREPEAT = 0x4000
+)
+
+func RegisterHotKey(hWnd HWND, id int32, fsModifiers uint32, vk uint32) bool {
+	ret, _, _ := syscall.Syscall6(registerHotKey.Addr(), 4,
+		uintptr(hWnd),
+		uintptr(id),
+		uintptr(fsModifiers), uintptr(vk), 0, 0)
+	return ret != 0
+}
+func UnregisterHotKey(hWnd HWND, id int32) bool {
+	ret, _, _ := syscall.Syscall(unregisterHotKey.Addr(), 2,
+		uintptr(hWnd),
+		uintptr(id),
+		0)
 	return ret != 0
 }

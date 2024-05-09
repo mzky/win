@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
@@ -68,6 +69,7 @@ var (
 	getCurrentThreadId                 *windows.LazyProc
 	getLastError                       *windows.LazyProc
 	getLocaleInfo                      *windows.LazyProc
+	getDiskFreeSpaceEx                 *windows.LazyProc
 	getLogicalDriveStrings             *windows.LazyProc
 	getModuleHandle                    *windows.LazyProc
 	getNumberFormat                    *windows.LazyProc
@@ -88,6 +90,9 @@ var (
 	sizeofResource                     *windows.LazyProc
 	setUnhandledExceptionFilter        *windows.LazyProc
 	systemTimeToFileTime               *windows.LazyProc
+	wTSGetActiveConsoleSessionId       *windows.LazyProc
+	getSystemWow64DirectoryW           *windows.LazyProc
+	getSystemInfo                      *windows.LazyProc
 )
 
 type (
@@ -141,13 +146,68 @@ type ACTCTX struct {
 	Module                HMODULE
 }
 
+const (
+	ROCESSOR_ARCHITECTURE_AMD64    = 9      //x64 (AMD 或 Intel)
+	PROCESSOR_ARCHITECTURE_ARM     = 5      //ARM
+	PROCESSOR_ARCHITECTURE_ARM64   = 12     //ARM64
+	PROCESSOR_ARCHITECTURE_IA64    = 6      //基于 Intel Itanium
+	PROCESSOR_ARCHITECTURE_INTEL   = 0      //x86
+	PROCESSOR_ARCHITECTURE_UNKNOWN = 0xffff //未知的体系结构。
+
+	PROCESSOR_INTEL_386     = 386
+	PROCESSOR_INTEL_486     = 486
+	PROCESSOR_INTEL_PENTIUM = 586
+	PROCESSOR_INTEL_IA64    = 2200
+	PROCESSOR_AMD_X8664     = 8664
+)
+
+type SYSTEMINFO struct {
+	WProcessorId                uint16
+	WReserved                   uint16
+	DwPageSize                  uint32
+	LpMinimumApplicationAddress uintptr
+	LpMaximumApplicationAddress uintptr
+	DwActiveProcessorMask       uintptr
+	DwNumberOfProcessors        uint32
+	DwProcessorType             uint32
+	DwAllocationGranularity     uint32
+	DwProcessorLevel            uint16
+	DwProcessorRevision         uint16
+}
+
+type WTSSESSIONINFO struct {
+	SessionID       uint32
+	pWinStationName uintptr
+	State           WTSCONNECTSTATECLASS
+}
+type WTSCONNECTSTATECLASS int
+
+const (
+	WTSActive WTSCONNECTSTATECLASS = iota
+	WTSConnected
+	WTSConnectQuery
+	WTSShadow
+	WTSDisconnected
+	WTSIdle
+	WTSListen
+	WTSReset
+	WTSDown
+	WTSInit
+)
+
+type PROCESSINFORMATION struct {
+	HProcess, HThread       uintptr
+	dwProcessId, dwThreadId uint
+}
+
 func init() {
 	// Library
 	libkernel32 = windows.NewLazySystemDLL("kernel32.dll")
-
 	// Functions
 	activateActCtx = libkernel32.NewProc("ActivateActCtx")
 	closeHandle = libkernel32.NewProc("CloseHandle")
+	wTSGetActiveConsoleSessionId = libkernel32.NewProc("WTSGetActiveConsoleSessionId")
+	getSystemWow64DirectoryW = libkernel32.NewProc("GetSystemWow64DirectoryW")
 	createActCtx = libkernel32.NewProc("CreateActCtxW")
 	fileTimeToSystemTime = libkernel32.NewProc("FileTimeToSystemTime")
 	findResource = libkernel32.NewProc("FindResourceW")
@@ -157,6 +217,7 @@ func init() {
 	getLastError = libkernel32.NewProc("GetLastError")
 	getLocaleInfo = libkernel32.NewProc("GetLocaleInfoW")
 	getLogicalDriveStrings = libkernel32.NewProc("GetLogicalDriveStringsW")
+	getDiskFreeSpaceEx = libkernel32.NewProc("GetDiskFreeSpaceExW")
 	getModuleHandle = libkernel32.NewProc("GetModuleHandleW")
 	getNumberFormat = libkernel32.NewProc("GetNumberFormatW")
 	getPhysicallyInstalledSystemMemory = libkernel32.NewProc("GetPhysicallyInstalledSystemMemory")
@@ -176,6 +237,7 @@ func init() {
 	sizeofResource = libkernel32.NewProc("SizeofResource")
 	systemTimeToFileTime = libkernel32.NewProc("SystemTimeToFileTime")
 	setUnhandledExceptionFilter = libkernel32.NewProc("SetUnhandledExceptionFilter")
+	getSystemInfo = libkernel32.NewProc("GetSystemInfo")
 }
 
 func ActivateActCtx(ctx HANDLE) (uintptr, bool) {
@@ -460,4 +522,41 @@ func SetUnhandledExceptionFilter(callback OnUnhandledException) {
 		syscall.NewCallbackCDecl(callback),
 		0,
 		0)
+}
+func GetDiskFreeSpaceEx(dirName string) (r bool,
+	freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes uint64) {
+	fromString, err := syscall.UTF16FromString(dirName)
+	if err != nil {
+		return
+	}
+	ret, _, _ := getDiskFreeSpaceEx.Call(
+		uintptr(unsafe.Pointer(&fromString[0])),
+		uintptr(unsafe.Pointer(&freeBytesAvailable)),
+		uintptr(unsafe.Pointer(&totalNumberOfBytes)),
+		uintptr(unsafe.Pointer(&totalNumberOfFreeBytes)))
+	return ret != 0,
+		freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes
+}
+
+func WTSGetActiveConsoleSessionId() uint32 {
+	ret, _, _ := syscall.Syscall(wTSGetActiveConsoleSessionId.Addr(), 0,
+		0,
+		0,
+		0)
+	return uint32(ret)
+}
+func GetSystemWow64DirectoryW() bool {
+	ret, _, _ := syscall.Syscall(getSystemWow64DirectoryW.Addr(), 2,
+		0,
+		0,
+		0)
+	return ret > 0
+}
+func GetSystemInfo() SYSTEMINFO {
+	var a SYSTEMINFO
+	syscall.Syscall(getSystemInfo.Addr(), 1,
+		uintptr(unsafe.Pointer(&a)),
+		0,
+		0)
+	return a
 }

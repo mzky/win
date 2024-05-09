@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package win
@@ -1057,6 +1058,7 @@ var (
 
 	// Functions
 	abortDoc                *windows.LazyProc
+	addFontResource         *windows.LazyProc
 	addFontResourceEx       *windows.LazyProc
 	addFontMemResourceEx    *windows.LazyProc
 	alphaBlend              *windows.LazyProc
@@ -1110,6 +1112,7 @@ var (
 	polyline                *windows.LazyProc
 	rectangle               *windows.LazyProc
 	createPen               *windows.LazyProc
+	removeFontResource      *windows.LazyProc
 	removeFontResourceEx    *windows.LazyProc
 	removeFontMemResourceEx *windows.LazyProc
 	resetDC                 *windows.LazyProc
@@ -1141,6 +1144,7 @@ func init() {
 
 	// Functions
 	abortDoc = libgdi32.NewProc("AbortDoc")
+	addFontResource = libgdi32.NewProc("AddFontResourceW")
 	addFontResourceEx = libgdi32.NewProc("AddFontResourceExW")
 	addFontMemResourceEx = libgdi32.NewProc("AddFontMemResourceEx")
 	bitBlt = libgdi32.NewProc("BitBlt")
@@ -1192,6 +1196,7 @@ func init() {
 	polyline = libgdi32.NewProc("Polyline")
 	rectangle = libgdi32.NewProc("Rectangle")
 	createPen = libgdi32.NewProc("CreatePen")
+	removeFontResource = libgdi32.NewProc("RemoveFontResourceW")
 	removeFontResourceEx = libgdi32.NewProc("RemoveFontResourceExW")
 	removeFontMemResourceEx = libgdi32.NewProc("RemoveFontMemResourceEx")
 	resetDC = libgdi32.NewProc("ResetDCW")
@@ -1228,6 +1233,14 @@ func AbortDoc(hdc HDC) int32 {
 	return int32(ret)
 }
 
+func AddFontResource(lpszFilename *uint16) int32 {
+	ret, _, _ := syscall.Syscall(addFontResource.Addr(), 1,
+		uintptr(unsafe.Pointer(lpszFilename)),
+		0,
+		0)
+
+	return int32(ret)
+}
 func AddFontResourceEx(lpszFilename *uint16, fl uint32) int32 {
 	ret, _, _ := syscall.Syscall(addFontResourceEx.Addr(), 3,
 		uintptr(unsafe.Pointer(lpszFilename)),
@@ -1789,6 +1802,14 @@ func RemoveFontResourceEx(lpszFilename *uint16, fl uint32) bool {
 	ret, _, _ := syscall.Syscall(removeFontResourceEx.Addr(), 3,
 		uintptr(unsafe.Pointer(lpszFilename)),
 		uintptr(fl),
+		0)
+
+	return ret != 0
+}
+func RemoveFontResource(lpszFilename *uint16) bool {
+	ret, _, _ := syscall.Syscall(removeFontResource.Addr(), 1,
+		uintptr(unsafe.Pointer(lpszFilename)),
+		0,
 		0)
 
 	return ret != 0
